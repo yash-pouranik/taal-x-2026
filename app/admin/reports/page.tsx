@@ -2,11 +2,9 @@
 
 import AdminNav from '@/components/AdminNav'
 import {
-  FileSpreadsheet,
   Download,
   Users,
   CheckCircle2,
-  Calendar,
 } from 'lucide-react'
 
 export default function ReportsPage() {

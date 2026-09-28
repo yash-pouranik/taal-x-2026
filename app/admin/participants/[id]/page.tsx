@@ -12,11 +12,8 @@ import {
   RefreshCw,
   CheckCircle2,
   XCircle,
-  Calendar,
   Clock,
-  User,
   Loader2,
-  ShieldAlert,
 } from 'lucide-react'
 
 interface DayGrid {

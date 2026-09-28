@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import AdminNav from '@/components/AdminNav'
 import {
-  Users,
   Printer,
   Plus,
   Search,

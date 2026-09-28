@@ -12,7 +12,6 @@ import {
   XCircle,
   QrCode,
   ArrowLeft,
-  Sparkles,
   UserCheck,
   RefreshCw,
   Loader2,
