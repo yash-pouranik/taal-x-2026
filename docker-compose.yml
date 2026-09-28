@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: navratri-app
+    ports:
+      - "3000:3000"
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017/navratri-distribution
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - NEXTAUTH_URL=${NEXTAUTH_URL}
+      - NODE_ENV=production
+    depends_on:
+      - mongo
+    restart: unless-stopped
+
+  mongo:
+    image: mongo:7
+    container_name: navratri-mongo
+    volumes:
+      - mongo_data:/data/db
+    ports:
+      - "27017:27017"   # Remove this line in production (don't expose MongoDB publicly)
+    restart: unless-stopped
+
+volumes:
+  mongo_data:
+    driver: local
