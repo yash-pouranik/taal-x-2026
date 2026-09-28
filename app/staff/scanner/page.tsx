@@ -39,7 +39,10 @@ interface ErrorResult {
 }
 
 export default function ScannerPage() {
-  const html5QrRef = useRef<{ stop: () => Promise<void> } | null>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const html5QrRef = useRef<any>(null)
+  const isScanningRef = useRef(false)
+
   const [state, setState] = useState<ScanState>('scanning')
   const [verifyData, setVerifyData] = useState<VerifyResult | null>(null)
   const [errorData, setErrorData] = useState<ErrorResult | null>(null)
@@ -51,66 +54,82 @@ export default function ScannerPage() {
   const [confirming, setConfirming] = useState(false)
   const [cameraError, setCameraError] = useState<string | null>(null)
 
-  useEffect(() => {
-    let mounted = true
-    let scanner: { stop: () => Promise<void> } | null = null
+  // Safe time formatter
+  function formatClaimTime(timeStr?: string) {
+    if (!timeStr) return ''
+    try {
+      const d = new Date(timeStr)
+      if (isNaN(d.getTime())) return timeStr
+      return d.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })
+    } catch {
+      return timeStr
+    }
+  }
 
-    async function startScanner() {
+  // Safe scanner stopper
+  async function stopCamera() {
+    if (html5QrRef.current && isScanningRef.current) {
       try {
-        const { Html5Qrcode } = await import('html5-qrcode')
-        if (!mounted) return
-
-        scanner = new Html5Qrcode('qr-reader')
-        html5QrRef.current = scanner
-
-        await (
-          scanner as unknown as {
-            start: (
-              config: { facingMode: string },
-              settings: {
-                fps: number
-                qrbox: { width: number; height: number }
-                aspectRatio: number
-              },
-              onSuccess: (text: string) => void,
-              onError: () => void
-            ) => Promise<void>
-          }
-        ).start(
-          { facingMode: 'environment' },
-          { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 },
-          (token: string) => {
-            if (mounted) onQRScanned(token)
-          },
-          () => {} // Frame error ignore
-        )
+        await html5QrRef.current.stop()
       } catch (err) {
-        if (mounted) {
-          console.error(err)
-          setCameraError(
-            'Camera permission is required to scan passes. Please grant camera permission in your browser and tap Retry.'
-          )
-        }
+        console.warn('Error stopping scanner:', err)
+      } finally {
+        isScanningRef.current = false
       }
     }
+  }
 
+  // Safe scanner starter
+  async function startCamera() {
+    try {
+      const { Html5Qrcode } = await import('html5-qrcode')
+
+      if (!html5QrRef.current) {
+        html5QrRef.current = new Html5Qrcode('qr-reader')
+      }
+
+      if (isScanningRef.current) {
+        return
+      }
+
+      await html5QrRef.current.start(
+        { facingMode: 'environment' },
+        { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 },
+        (token: string) => {
+          onQRScanned(token)
+        },
+        () => {} // Frame error ignore
+      )
+
+      isScanningRef.current = true
+      setCameraError(null)
+    } catch (err) {
+      console.error('Camera start error:', err)
+      isScanningRef.current = false
+      setCameraError(
+        'Camera permission is required to scan passes. Please grant camera permission in your browser and tap Retry.'
+      )
+    }
+  }
+
+  useEffect(() => {
     if (state === 'scanning') {
-      startScanner()
+      startCamera()
+    } else {
+      stopCamera()
     }
 
     return () => {
-      mounted = false
-      if (html5QrRef.current) {
-        html5QrRef.current.stop().catch(() => {})
-      }
+      stopCamera()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state])
 
   async function onQRScanned(token: string) {
-    if (html5QrRef.current) {
-      await html5QrRef.current.stop().catch(() => {})
-    }
+    if (!token) return
+
+    // Stop camera immediately
+    await stopCamera()
     setState('loading')
 
     try {
@@ -121,17 +140,18 @@ export default function ScannerPage() {
       })
       const data = await res.json()
 
-      if (res.ok && data.valid) {
+      if (res.ok && data?.valid) {
         setVerifyData(data)
         setState('verify')
       } else {
-        setErrorData(data)
+        setErrorData(data || { error: 'UNKNOWN', message: 'Verification failed' })
         setState('error')
       }
-    } catch {
+    } catch (err) {
+      console.error('Fetch verify error:', err)
       setErrorData({
         error: 'NETWORK_ERROR',
-        message: 'Unable to connect to server. Check local network connection.',
+        message: 'Unable to connect to server. Please check your internet connection.',
       })
       setState('error')
     }
@@ -148,7 +168,7 @@ export default function ScannerPage() {
       })
       const data = await res.json()
 
-      if (res.ok && data.success) {
+      if (res.ok && data?.success) {
         setSuccessData({
           name: data.claim.participant.name,
           navratriDay: data.claim.navratriDay,
@@ -156,10 +176,11 @@ export default function ScannerPage() {
         })
         setState('success')
       } else {
-        setErrorData({ error: data.error, message: data.message })
+        setErrorData(data || { error: 'FAILED', message: 'Claim failed' })
         setState('error')
       }
-    } catch {
+    } catch (err) {
+      console.error('Confirm claim error:', err)
       setErrorData({
         error: 'NETWORK_ERROR',
         message: 'Unable to connect to server. Please try again.',
@@ -195,54 +216,59 @@ export default function ScannerPage() {
 
       {/* Main Screen Body */}
       <main className="flex-1 flex flex-col items-center justify-center p-4 max-w-md mx-auto w-full">
-        {/* ── 1. SCANNING STATE ── */}
-        {state === 'scanning' && (
-          <div className="w-full flex flex-col items-center justify-center gap-5">
-            {cameraError ? (
-              <div className="bg-slate-900 border border-red-500/40 rounded-3xl p-7 text-center w-full max-w-sm">
-                <div className="w-12 h-12 rounded-2xl bg-red-500/10 text-red-400 flex items-center justify-center mx-auto mb-3">
-                  <CameraOff className="w-6 h-6" />
-                </div>
-                <h3 className="font-bold text-sm text-red-200">Camera Access Blocked</h3>
-                <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-                  {cameraError}
-                </p>
-                <button
-                  onClick={() => {
-                    setCameraError(null)
-                    setState('scanning')
-                  }}
-                  className="mt-5 w-full bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-xl text-xs font-semibold"
-                >
-                  Retry Camera
-                </button>
+        {/* ── 1. SCANNING STATE (Element stays mounted permanently to prevent DOM detached errors) ── */}
+        <div
+          className={
+            state === 'scanning'
+              ? 'w-full flex flex-col items-center justify-center gap-5'
+              : 'hidden'
+          }
+        >
+          {cameraError ? (
+            <div className="bg-slate-900 border border-red-500/40 rounded-3xl p-7 text-center w-full max-w-sm">
+              <div className="w-12 h-12 rounded-2xl bg-red-500/10 text-red-400 flex items-center justify-center mx-auto mb-3">
+                <CameraOff className="w-6 h-6" />
               </div>
-            ) : (
-              <>
-                <div className="text-center">
-                  <h2 className="text-base font-bold text-slate-200">
-                    Scan Participant Pass
-                  </h2>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    Align QR code inside camera target
-                  </p>
-                </div>
+              <h3 className="font-bold text-sm text-red-200">Camera Access Blocked</h3>
+              <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+                {cameraError}
+              </p>
+              <button
+                onClick={() => {
+                  setCameraError(null)
+                  startCamera()
+                }}
+                className="mt-5 w-full bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-xl text-xs font-semibold"
+              >
+                Retry Camera
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="text-center">
+                <h2 className="text-base font-bold text-slate-200">
+                  Scan Participant Pass
+                </h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Align QR code inside camera target
+                </p>
+              </div>
 
-                <div className="w-full max-w-xs aspect-square rounded-3xl overflow-hidden border-2 border-slate-800 shadow-2xl relative bg-black">
-                  <div id="qr-reader" className="w-full h-full" />
-                </div>
+              <div className="w-full max-w-xs aspect-square rounded-3xl overflow-hidden border-2 border-slate-800 shadow-2xl relative bg-black">
+                {/* #qr-reader is permanently in DOM */}
+                <div id="qr-reader" className="w-full h-full" />
+              </div>
 
-                <span className="text-[11px] text-slate-500 font-medium">
-                  Camera active • Auto-detecting code
-                </span>
-              </>
-            )}
-          </div>
-        )}
+              <span className="text-[11px] text-slate-500 font-medium">
+                Camera active • Auto-detecting code
+              </span>
+            </>
+          )}
+        </div>
 
         {/* ── 2. LOADING STATE ── */}
         {state === 'loading' && (
-          <div className="text-center py-16">
+          <div className="text-center py-16 animate-in fade-in duration-150">
             <div className="w-16 h-16 rounded-3xl bg-slate-900 border border-slate-800 flex items-center justify-center text-orange-500 mx-auto mb-4 animate-pulse">
               <Search className="w-7 h-7" />
             </div>
@@ -404,10 +430,7 @@ export default function ScannerPage() {
 
               {errorData.claim && (
                 <div className="mt-3 text-[11px] text-amber-400/90 font-medium">
-                  Claimed at:{' '}
-                  {new Date(errorData.claim.claimedAt).toLocaleTimeString('en-IN', {
-                    timeZone: 'Asia/Kolkata',
-                  })}{' '}
+                  Claimed at: {formatClaimTime(errorData.claim.claimedAt)}{' '}
                   {errorData.claim.claimedBy && `by ${errorData.claim.claimedBy}`}
                 </div>
               )}
