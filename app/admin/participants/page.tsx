@@ -17,6 +17,7 @@ interface Participant {
   participantId: string
   name: string
   fatherName: string
+  status?: 'active' | 'cancelled'
   createdAt: string
 }
 
@@ -105,6 +106,7 @@ export default function ParticipantsPage() {
                   <th className="px-6 py-3.5">ID</th>
                   <th className="px-6 py-3.5">Participant Name</th>
                   <th className="px-6 py-3.5">Parent / Guardian</th>
+                  <th className="px-6 py-3.5">Status</th>
                   <th className="px-6 py-3.5">Registered On</th>
                   <th className="px-6 py-3.5 text-right">Actions</th>
                 </tr>
@@ -112,7 +114,7 @@ export default function ParticipantsPage() {
               <tbody className="divide-y divide-slate-100">
                 {loading ? (
                   <tr>
-                    <td colSpan={5} className="text-center py-16 text-slate-400">
+                    <td colSpan={6} className="text-center py-16 text-slate-400">
                       <div className="inline-flex items-center gap-2">
                         <Loader2 className="w-5 h-5 animate-spin text-orange-500" />
                         <span>Searching participants...</span>
@@ -121,51 +123,83 @@ export default function ParticipantsPage() {
                   </tr>
                 ) : participants.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="text-center py-16 text-slate-400">
+                    <td colSpan={6} className="text-center py-16 text-slate-400">
                       No participants match your query.
                     </td>
                   </tr>
                 ) : (
-                  participants.map((p) => (
-                    <tr
-                      key={p._id}
-                      className="hover:bg-slate-50/60 transition-colors group"
-                    >
-                      <td className="px-6 py-4">
-                        <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-700">
-                          {p.participantId}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 font-semibold text-slate-900">
-                        {p.name}
-                      </td>
-                      <td className="px-6 py-4 text-slate-600">
-                        <span className="text-xs text-slate-400 mr-1.5 font-normal">
-                          D/o
-                        </span>
-                        {p.fatherName}
-                      </td>
-                      <td className="px-6 py-4 text-slate-500 text-xs">
-                        <div className="flex items-center gap-1.5">
-                          <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                          <span>
-                            {new Date(p.createdAt).toLocaleDateString('en-IN', {
-                              timeZone: 'Asia/Kolkata',
-                            })}
+                  participants.map((p) => {
+                    const isCancelled = p.status === 'cancelled'
+                    return (
+                      <tr
+                        key={p._id}
+                        className={`transition-colors group ${
+                          isCancelled
+                            ? 'bg-red-50/30 hover:bg-red-50/50'
+                            : 'hover:bg-slate-50/60'
+                        }`}
+                      >
+                        <td className="px-6 py-4">
+                          <span
+                            className={`font-mono text-xs font-bold px-2 py-0.5 rounded ${
+                              isCancelled
+                                ? 'bg-red-100 text-red-700'
+                                : 'bg-slate-100 text-slate-700'
+                            }`}
+                          >
+                            {p.participantId}
                           </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <Link
-                          href={`/admin/participants/${p._id}`}
-                          className="inline-flex items-center gap-1 text-xs font-bold text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100 px-3 py-1.5 rounded-lg transition-colors"
-                        >
-                          <span>View Details</span>
-                          <ChevronRight className="w-3.5 h-3.5" />
-                        </Link>
-                      </td>
-                    </tr>
-                  ))
+                        </td>
+                        <td className="px-6 py-4">
+                          <span
+                            className={`font-semibold ${
+                              isCancelled
+                                ? 'text-slate-500 line-through'
+                                : 'text-slate-900'
+                            }`}
+                          >
+                            {p.name}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-slate-600">
+                          <span className="text-xs text-slate-400 mr-1.5 font-normal">
+                            D/o
+                          </span>
+                          {p.fatherName}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                              isCancelled
+                                ? 'bg-red-100 text-red-700 border border-red-200'
+                                : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            }`}
+                          >
+                            {isCancelled ? 'Cancelled' : 'Active'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-slate-500 text-xs">
+                          <div className="flex items-center gap-1.5">
+                            <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                            <span>
+                              {new Date(p.createdAt).toLocaleDateString('en-IN', {
+                                timeZone: 'Asia/Kolkata',
+                              })}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <Link
+                            href={`/admin/participants/${p._id}`}
+                            className="inline-flex items-center gap-1 text-xs font-bold text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100 px-3 py-1.5 rounded-lg transition-colors"
+                          >
+                            <span>View Details</span>
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          </Link>
+                        </td>
+                      </tr>
+                    )
+                  })
                 )}
               </tbody>
             </table>

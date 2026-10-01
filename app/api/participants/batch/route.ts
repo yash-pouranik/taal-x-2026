@@ -13,7 +13,7 @@ export async function GET() {
 
   await connectDB()
 
-  const participants = await Participant.find().sort({ participantId: 1 })
+  const participants = await Participant.find({ status: { $ne: 'cancelled' } }).sort({ participantId: 1 })
 
   // Ensure all participants have a qrToken populated for printing
   const updatedParticipants = await Promise.all(

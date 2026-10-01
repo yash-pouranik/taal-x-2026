@@ -17,7 +17,7 @@ export async function GET() {
 
   const todayDate = getCurrentIndiaDate()
   const config = await EventConfig.findOne()
-  const totalParticipants = await Participant.countDocuments()
+  const totalParticipants = await Participant.countDocuments({ status: { $ne: 'cancelled' } })
 
   const todayClaims = await Claim.countDocuments({ distributionDate: todayDate })
 

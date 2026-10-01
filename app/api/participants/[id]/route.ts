@@ -76,3 +76,60 @@ export async function PUT(
 
   return NextResponse.json({ participant })
 }
+
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const session = await getServerSession(authOptions)
+  if (!session || session.user.role !== 'admin') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  await connectDB()
+  const body = await req.json()
+  const { status } = body
+
+  if (!status || !['active', 'cancelled'].includes(status)) {
+    return NextResponse.json({ error: 'Status must be active or cancelled' }, { status: 400 })
+  }
+
+  const updateData: { status: string; cancelledAt?: Date | null } = {
+    status,
+    cancelledAt: status === 'cancelled' ? new Date() : null,
+  }
+
+  const participant = await Participant.findByIdAndUpdate(
+    params.id,
+    updateData,
+    { new: true }
+  ).select('-qrTokenHash')
+
+  if (!participant) {
+    return NextResponse.json({ error: 'Participant not found' }, { status: 404 })
+  }
+
+  return NextResponse.json({ participant })
+}
+
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const session = await getServerSession(authOptions)
+  if (!session || session.user.role !== 'admin') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  await connectDB()
+
+  const participant = await Participant.findByIdAndDelete(params.id)
+  if (!participant) {
+    return NextResponse.json({ error: 'Participant not found' }, { status: 404 })
+  }
+
+  // Also clean up any associated claims
+  await Claim.deleteMany({ participantId: params.id })
+
+  return NextResponse.json({ success: true, message: 'Participant and claims deleted' })
+}

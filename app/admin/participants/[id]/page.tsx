@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import AdminNav from '@/components/AdminNav'
 import ConfirmDialog from '@/components/ConfirmDialog'
@@ -14,6 +14,10 @@ import {
   XCircle,
   Clock,
   Loader2,
+  AlertTriangle,
+  UserX,
+  Trash2,
+  ShieldCheck,
 } from 'lucide-react'
 
 interface DayGrid {
@@ -32,17 +36,27 @@ interface Participant {
   participantId: string
   name: string
   fatherName: string
+  status?: 'active' | 'cancelled'
+  cancelledAt?: string
   createdAt: string
 }
 
 export default function ParticipantDetailPage() {
   const { id } = useParams<{ id: string }>()
+  const router = useRouter()
+
   const [participant, setParticipant] = useState<Participant | null>(null)
   const [dayGrid, setDayGrid] = useState<DayGrid[]>([])
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [qrLoading, setQrLoading] = useState(false)
+  const [actionLoading, setActionLoading] = useState(false)
+
+  // Dialog states
   const [showRegenModal, setShowRegenModal] = useState(false)
+  const [showCancelModal, setShowCancelModal] = useState(false)
+  const [showReactivateModal, setShowReactivateModal] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
 
   async function loadQR() {
     setQrLoading(true)
@@ -85,6 +99,60 @@ export default function ParticipantDetailPage() {
     }
   }
 
+  // Cancel registration
+  async function handleConfirmCancel() {
+    setShowCancelModal(false)
+    setActionLoading(true)
+    try {
+      const res = await fetch(`/api/participants/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'cancelled' }),
+      })
+      const data = await res.json()
+      if (res.ok && data.participant) {
+        setParticipant(data.participant)
+      }
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  // Reactivate registration
+  async function handleConfirmReactivate() {
+    setShowReactivateModal(false)
+    setActionLoading(true)
+    try {
+      const res = await fetch(`/api/participants/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'active' }),
+      })
+      const data = await res.json()
+      if (res.ok && data.participant) {
+        setParticipant(data.participant)
+      }
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  // Delete registration permanently
+  async function handleConfirmDelete() {
+    setShowDeleteModal(false)
+    setActionLoading(true)
+    try {
+      const res = await fetch(`/api/participants/${id}`, {
+        method: 'DELETE',
+      })
+      if (res.ok) {
+        router.push('/admin/participants')
+      }
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50/70">
@@ -106,7 +174,7 @@ export default function ParticipantDetailPage() {
             <XCircle className="w-6 h-6" />
           </div>
           <h2 className="text-lg font-bold text-slate-900">Participant Not Found</h2>
-          <p className="text-sm text-slate-500 mt-1">This record may have been removed.</p>
+          <p className="text-sm text-slate-500 mt-1">This record may have been deleted.</p>
           <Link
             href="/admin/participants"
             className="inline-flex items-center gap-1.5 mt-4 text-xs font-semibold text-orange-600 hover:underline"
@@ -119,11 +187,13 @@ export default function ParticipantDetailPage() {
     )
   }
 
+  const isCancelled = participant.status === 'cancelled'
+
   return (
     <div className="min-h-screen bg-slate-50/70">
       <AdminNav />
 
-      {/* Confirmation Dialog for Regenerating QR */}
+      {/* Confirmation Dialog: Regenerate QR */}
       <ConfirmDialog
         isOpen={showRegenModal}
         title="Regenerate QR Code?"
@@ -135,9 +205,45 @@ export default function ParticipantDetailPage() {
         onCancel={() => setShowRegenModal(false)}
       />
 
+      {/* Confirmation Dialog: Cancel Registration */}
+      <ConfirmDialog
+        isOpen={showCancelModal}
+        title={`Cancel Registration for ${participant.name}?`}
+        description="Cancelling will immediately deactivate this participant's QR pass. Any volunteer scanning this pass will see 'Registration Cancelled' and prop distribution will be blocked. You can reactivate later if needed."
+        confirmText="Yes, Cancel Registration"
+        cancelText="Keep Active"
+        variant="warning"
+        onConfirm={handleConfirmCancel}
+        onCancel={() => setShowCancelModal(false)}
+      />
+
+      {/* Confirmation Dialog: Reactivate Registration */}
+      <ConfirmDialog
+        isOpen={showReactivateModal}
+        title={`Reactivate ${participant.name}?`}
+        description="This will restore the participant to Active status. Her QR pass will once again be valid for daily prop collection."
+        confirmText="Yes, Reactivate Pass"
+        cancelText="Keep Cancelled"
+        variant="primary"
+        onConfirm={handleConfirmReactivate}
+        onCancel={() => setShowReactivateModal(false)}
+      />
+
+      {/* Confirmation Dialog: Delete Permanently */}
+      <ConfirmDialog
+        isOpen={showDeleteModal}
+        title={`Permanently Delete ${participant.name}?`}
+        description={`This will erase ${participant.name} (${participant.participantId}) and all their claim history completely from the database. This action CANNOT be undone.`}
+        confirmText="Permanently Delete"
+        cancelText="Cancel"
+        variant="danger"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setShowDeleteModal(false)}
+      />
+
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb */}
-        <div className="mb-6">
+        <div className="mb-6 flex items-center justify-between">
           <Link
             href="/admin/participants"
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors"
@@ -145,7 +251,53 @@ export default function ParticipantDetailPage() {
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Back to Participants</span>
           </Link>
+
+          {/* Registration Status Pill */}
+          <span
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
+              isCancelled
+                ? 'bg-red-100 text-red-700 border border-red-200'
+                : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+            }`}
+          >
+            <span
+              className={`w-2 h-2 rounded-full ${
+                isCancelled ? 'bg-red-500' : 'bg-emerald-500'
+              }`}
+            />
+            <span>{isCancelled ? 'Registration Cancelled' : 'Active Pass'}</span>
+          </span>
         </div>
+
+        {/* Cancellation Notice Banner (Visible only if cancelled) */}
+        {isCancelled && (
+          <div className="mb-6 bg-red-50 border border-red-200/80 rounded-3xl p-5 flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+              <div>
+                <h3 className="text-sm font-bold text-red-900">
+                  This Registration Has Been Cancelled
+                </h3>
+                <p className="text-xs text-red-700 mt-1">
+                  The QR code for this participant is deactivated. Volunteers scanning this code will see &quot;Registration Cancelled&quot; and will not be able to distribute props.
+                  {participant.cancelledAt && (
+                    <span className="block mt-0.5 text-red-600/80">
+                      Cancelled on: {new Date(participant.cancelledAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}
+                    </span>
+                  )}
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowReactivateModal(true)}
+              disabled={actionLoading}
+              className="shrink-0 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-4 py-2 rounded-xl transition-colors shadow-xs"
+            >
+              Reactivate
+            </button>
+          </div>
+        )}
 
         {/* 2-Column Responsive Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -166,7 +318,13 @@ export default function ParticipantDetailPage() {
                       })}
                     </span>
                   </div>
-                  <h1 className="text-2xl font-bold tracking-tight text-slate-900 mt-2">
+                  <h1
+                    className={`text-2xl font-bold tracking-tight mt-2 ${
+                      isCancelled
+                        ? 'text-slate-500 line-through'
+                        : 'text-slate-900'
+                    }`}
+                  >
                     {participant.name}
                   </h1>
                   <p className="text-sm font-medium text-slate-600 mt-1 flex items-center gap-1.5">
@@ -175,13 +333,15 @@ export default function ParticipantDetailPage() {
                   </p>
                 </div>
 
-                <Link
-                  href={`/admin/participants/${id}/print`}
-                  className="inline-flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-4 py-2.5 rounded-xl font-semibold text-xs shadow-xs transition-colors"
-                >
-                  <Printer className="w-4 h-4" />
-                  <span>Print Single Card</span>
-                </Link>
+                {!isCancelled && (
+                  <Link
+                    href={`/admin/participants/${id}/print`}
+                    className="inline-flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-4 py-2.5 rounded-xl font-semibold text-xs shadow-xs transition-colors"
+                  >
+                    <Printer className="w-4 h-4" />
+                    <span>Print Single Card</span>
+                  </Link>
+                )}
               </div>
             </div>
 
@@ -252,6 +412,47 @@ export default function ParticipantDetailPage() {
                 </div>
               )}
             </div>
+
+            {/* Danger Zone: Cancellation & Permanent Delete Card */}
+            <div className="bg-white rounded-3xl shadow-xs border border-slate-200/80 p-6 sm:p-7">
+              <h3 className="text-sm font-bold text-slate-900 mb-1">
+                Registration Management
+              </h3>
+              <p className="text-xs text-slate-500 mb-4">
+                Deactivate or delete this participant registration.
+              </p>
+
+              <div className="flex flex-wrap items-center gap-3">
+                {isCancelled ? (
+                  <button
+                    onClick={() => setShowReactivateModal(true)}
+                    disabled={actionLoading}
+                    className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-semibold transition-colors"
+                  >
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>Reactivate Registration</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setShowCancelModal(true)}
+                    disabled={actionLoading}
+                    className="inline-flex items-center gap-2 border border-amber-300 hover:bg-amber-50 text-amber-800 px-4 py-2 rounded-xl text-xs font-semibold transition-colors"
+                  >
+                    <UserX className="w-4 h-4 text-amber-600" />
+                    <span>Cancel Registration</span>
+                  </button>
+                )}
+
+                <button
+                  onClick={() => setShowDeleteModal(true)}
+                  disabled={actionLoading}
+                  className="inline-flex items-center gap-2 border border-red-200 hover:bg-red-50 text-red-600 px-4 py-2 rounded-xl text-xs font-semibold transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>Delete Permanently</span>
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Right Column (1 Col): QR Code Card */}
@@ -261,7 +462,9 @@ export default function ParticipantDetailPage() {
                 Participant QR Code
               </h2>
               <p className="text-xs text-slate-500 text-left mb-5">
-                Scan-ready QR pass encoded with non-guessable random token.
+                {isCancelled
+                  ? 'QR code is currently DEACTIVATED due to registration cancellation.'
+                  : 'Scan-ready QR pass encoded with non-guessable random token.'}
               </p>
 
               {qrLoading ? (
@@ -270,44 +473,64 @@ export default function ParticipantDetailPage() {
                 </div>
               ) : qrDataUrl ? (
                 <div className="space-y-4">
-                  <div className="p-3 bg-slate-50/80 rounded-2xl border border-slate-100 inline-block shadow-xs">
+                  <div
+                    className={`p-3 rounded-2xl border inline-block shadow-xs relative ${
+                      isCancelled
+                        ? 'bg-red-50/50 border-red-200 opacity-60'
+                        : 'bg-slate-50/80 border-slate-100'
+                    }`}
+                  >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={qrDataUrl}
                       alt={`QR for ${participant.name}`}
                       className="w-48 h-48 mx-auto rounded-xl"
                     />
+
+                    {isCancelled && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-red-900/40 backdrop-blur-xs rounded-2xl">
+                        <span className="bg-red-600 text-white text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-md">
+                          Cancelled
+                        </span>
+                      </div>
+                    )}
                   </div>
 
-                  <div className="space-y-2">
-                    <Link
-                      href={`/admin/participants/${id}/print`}
-                      className="w-full inline-flex items-center justify-center gap-2 bg-orange-600 hover:bg-orange-700 text-white py-2.5 rounded-xl font-semibold text-xs shadow-xs transition-colors"
-                    >
-                      <Printer className="w-4 h-4" />
-                      <span>Print ID Card</span>
-                    </Link>
+                  {!isCancelled ? (
+                    <div className="space-y-2">
+                      <Link
+                        href={`/admin/participants/${id}/print`}
+                        className="w-full inline-flex items-center justify-center gap-2 bg-orange-600 hover:bg-orange-700 text-white py-2.5 rounded-xl font-semibold text-xs shadow-xs transition-colors"
+                      >
+                        <Printer className="w-4 h-4" />
+                        <span>Print ID Card</span>
+                      </Link>
 
-                    <a
-                      href={qrDataUrl}
-                      download={`qr-${participant.participantId}.png`}
-                      className="w-full inline-flex items-center justify-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 py-2.5 rounded-xl font-semibold text-xs shadow-xs transition-colors"
-                    >
-                      <Download className="w-4 h-4 text-slate-500" />
-                      <span>Download PNG</span>
-                    </a>
+                      <a
+                        href={qrDataUrl}
+                        download={`qr-${participant.participantId}.png`}
+                        className="w-full inline-flex items-center justify-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 py-2.5 rounded-xl font-semibold text-xs shadow-xs transition-colors"
+                      >
+                        <Download className="w-4 h-4 text-slate-500" />
+                        <span>Download PNG</span>
+                      </a>
 
-                    <button
-                      onClick={() => setShowRegenModal(true)}
-                      className="w-full inline-flex items-center justify-center gap-2 border border-red-200 hover:bg-red-50 text-red-600 py-2.5 rounded-xl font-semibold text-xs transition-colors"
-                    >
-                      <RefreshCw className="w-3.5 h-3.5" />
-                      <span>Regenerate (If Lost)</span>
-                    </button>
-                  </div>
+                      <button
+                        onClick={() => setShowRegenModal(true)}
+                        className="w-full inline-flex items-center justify-center gap-2 border border-red-200 hover:bg-red-50 text-red-600 py-2.5 rounded-xl font-semibold text-xs transition-colors"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                        <span>Regenerate (If Lost)</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-red-50 rounded-xl border border-red-200 text-xs text-red-700 font-medium">
+                      Pass is deactivated. Reactivate registration above to allow printing and prop distribution.
+                    </div>
+                  )}
 
                   <p className="text-[11px] text-slate-400 leading-relaxed text-left pt-2 border-t border-slate-100">
-                    Re-printing or downloading uses the same token. Regenerate invalidates previous copies if the physical card is lost.
+                    Re-printing or downloading uses the same token. Regenerate creates a new token if the physical card was lost.
                   </p>
                 </div>
               ) : (

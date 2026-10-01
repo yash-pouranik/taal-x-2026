@@ -26,6 +26,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Participant not found' }, { status: 404 })
   }
 
+  if (participant.status === 'cancelled') {
+    return NextResponse.json({
+      error: 'CANCELLED',
+      message: 'This registration has been cancelled. Cannot distribute prop.',
+    }, { status: 403 })
+  }
+
   // Re-validate distribution window server-side (critical — client date is never trusted)
   const config = await EventConfig.findOne()
   const status = isDistributionActive(config)

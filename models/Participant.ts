@@ -4,6 +4,8 @@ export interface IParticipant extends Document {
   participantId: string   // "NAV-001"
   name: string
   fatherName: string
+  status: 'active' | 'cancelled'
+  cancelledAt?: Date
   qrToken?: string        // Raw token stored to allow re-printing without changing the QR
   qrTokenHash: string     // SHA-256 for fast unique lookup on scan
   createdAt: Date
@@ -28,6 +30,15 @@ const ParticipantSchema = new Schema<IParticipant>(
       type: String,
       required: true,
       trim: true,
+    },
+    status: {
+      type: String,
+      enum: ['active', 'cancelled'],
+      default: 'active',
+      index: true,
+    },
+    cancelledAt: {
+      type: Date,
     },
     qrToken: {
       type: String,

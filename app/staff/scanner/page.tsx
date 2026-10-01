@@ -404,6 +404,8 @@ export default function ScannerPage() {
               <h2 className="text-lg font-bold text-white mb-1.5">
                 {errorData.error === 'ALREADY_CLAIMED'
                   ? 'Already Collected Today'
+                  : errorData.error === 'CANCELLED'
+                  ? 'Registration Cancelled'
                   : errorData.error === 'NOT_STARTED'
                   ? 'Distribution Not Started'
                   : errorData.error === 'ENDED'

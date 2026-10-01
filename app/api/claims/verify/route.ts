@@ -33,6 +33,20 @@ export async function POST(req: NextRequest) {
     }, { status: 404 })
   }
 
+  // Check if registration was cancelled
+  if (participant.status === 'cancelled') {
+    return NextResponse.json({
+      valid: false,
+      error: 'CANCELLED',
+      message: 'This participant registration has been cancelled. Prop cannot be issued.',
+      participant: {
+        name: participant.name,
+        fatherName: participant.fatherName,
+        participantId: participant.participantId,
+      },
+    }, { status: 403 })
+  }
+
   // Step 2: Check distribution window (server-side IST — never trust client)
   const config = await EventConfig.findOne()
   const status = isDistributionActive(config)
