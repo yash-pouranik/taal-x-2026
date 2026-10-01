@@ -56,14 +56,14 @@ export default function ParticipantsPage() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-                Registered Participants
+                पंजीकृत प्रतिभागी
               </h1>
               <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-200/80 text-slate-700">
                 {total}
               </span>
             </div>
             <p className="text-sm text-slate-500 mt-1">
-              Search, view claims matrix, download or print participant QR passes.
+              प्रतिभागी खोजें, वितरण सारणी देखें, और QR पास प्रिंट/डाउनलोड करें।
             </p>
           </div>
 
@@ -73,14 +73,14 @@ export default function ParticipantsPage() {
               className="inline-flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-4 py-2.5 rounded-xl font-semibold transition-all text-sm shadow-xs"
             >
               <Printer className="w-4 h-4 text-slate-500" />
-              <span>Bulk A4 Sheets</span>
+              <span>A4 शीट प्रिंट करें</span>
             </Link>
             <Link
               href="/admin/participants/register"
               className="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white px-4 py-2.5 rounded-xl font-semibold transition-all text-sm shadow-sm shadow-orange-600/20"
             >
               <Plus className="w-4 h-4" />
-              <span>Register Girl</span>
+              <span>नया पंजीकरण</span>
             </Link>
           </div>
         </div>
@@ -92,7 +92,7 @@ export default function ParticipantsPage() {
             type="text"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search by participant name, father's name, or ID..."
+            placeholder="प्रतिभागी का नाम, पिता का नाम या आईडी से खोजें..."
             className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all shadow-xs placeholder:text-slate-400"
           />
         </div>
@@ -103,12 +103,12 @@ export default function ParticipantsPage() {
             <table className="w-full text-left border-collapse text-sm">
               <thead>
                 <tr className="bg-slate-50/80 border-b border-slate-200/80 text-xs font-semibold uppercase tracking-wider text-slate-500">
-                  <th className="px-6 py-3.5">ID</th>
-                  <th className="px-6 py-3.5">Participant Name</th>
-                  <th className="px-6 py-3.5">Parent / Guardian</th>
-                  <th className="px-6 py-3.5">Status</th>
-                  <th className="px-6 py-3.5">Registered On</th>
-                  <th className="px-6 py-3.5 text-right">Actions</th>
+                  <th className="px-6 py-3.5">आईडी</th>
+                  <th className="px-6 py-3.5">प्रतिभागी का नाम</th>
+                  <th className="px-6 py-3.5">पिता / अभिभावक</th>
+                  <th className="px-6 py-3.5">स्थिति</th>
+                  <th className="px-6 py-3.5">पंजीकरण तिथि</th>
+                  <th className="px-6 py-3.5 text-right">कार्य</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -117,14 +117,14 @@ export default function ParticipantsPage() {
                     <td colSpan={6} className="text-center py-16 text-slate-400">
                       <div className="inline-flex items-center gap-2">
                         <Loader2 className="w-5 h-5 animate-spin text-orange-500" />
-                        <span>Searching participants...</span>
+                        <span>प्रतिभागी खोजे जा रहे हैं...</span>
                       </div>
                     </td>
                   </tr>
                 ) : participants.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="text-center py-16 text-slate-400">
-                      No participants match your query.
+                      कोई प्रतिभागी नहीं मिला।
                     </td>
                   </tr>
                 ) : (
@@ -163,7 +163,7 @@ export default function ParticipantsPage() {
                         </td>
                         <td className="px-6 py-4 text-slate-600">
                           <span className="text-xs text-slate-400 mr-1.5 font-normal">
-                            D/o
+                            पिता:
                           </span>
                           {p.fatherName}
                         </td>
@@ -175,7 +175,7 @@ export default function ParticipantsPage() {
                                 : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                             }`}
                           >
-                            {isCancelled ? 'Cancelled' : 'Active'}
+                            {isCancelled ? 'रद्द' : 'सक्रिय'}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-slate-500 text-xs">
@@ -193,7 +193,7 @@ export default function ParticipantsPage() {
                             href={`/admin/participants/${p._id}`}
                             className="inline-flex items-center gap-1 text-xs font-bold text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100 px-3 py-1.5 rounded-lg transition-colors"
                           >
-                            <span>View Details</span>
+                            <span>विवरण देखें</span>
                             <ChevronRight className="w-3.5 h-3.5" />
                           </Link>
                         </td>

@@ -207,11 +207,11 @@ export default function DailyScansPage() {
                 <Calendar className="w-4 h-4" />
               </div>
               <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-                Date-Wise Scans & Turnout
+                दैनिक स्कैन व उपस्थिति रिपोर्ट
               </h1>
             </div>
             <p className="text-sm text-slate-500 mt-1">
-              Real-time daily breakdown of participant attendance, gift/prop claims, and food packets.
+              प्रतिभागी उपस्थिति, उपहार/प्रॉप और भोजन पैकेट वितरण का लाइव दैनिक विवरण।
             </p>
           </div>
 
@@ -219,10 +219,10 @@ export default function DailyScansPage() {
             <button
               onClick={() => fetchScanData(selectedDate)}
               disabled={loading}
-              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700 shadow-xs transition-colors"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700 shadow-xs transition-colors"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-orange-600' : ''}`} />
-              <span>Refresh</span>
+              <span>रिफ्रेश</span>
             </button>
 
             <button
@@ -231,7 +231,7 @@ export default function DailyScansPage() {
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 text-white text-xs font-semibold shadow-xs transition-colors"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>Export Day {selectedDay} CSV</span>
+              <span>दिवस {selectedDay} CSV डाउनलोड</span>
             </button>
           </div>
         </div>
@@ -253,7 +253,7 @@ export default function DailyScansPage() {
                     }`}
                   >
                     <div className="flex items-center gap-1.5">
-                      <span>Day {item.day}</span>
+                      <span>दिवस {item.day}</span>
                       {item.isToday && (
                         <span
                           className={`w-2 h-2 rounded-full ${
@@ -282,17 +282,17 @@ export default function DailyScansPage() {
             <div className="flex items-center gap-2 text-slate-800 font-medium">
               <Clock className="w-4 h-4 text-orange-600" />
               <span>
-                Schedule for <strong>Day {selectedDay} ({selectedDate})</strong>
+                समय सारणी: <strong>दिवस {selectedDay} ({selectedDate})</strong>
               </span>
             </div>
-            <div className="flex items-center gap-4 text-slate-600">
+            <div className="flex flex-wrap items-center gap-3 text-slate-600">
               <span className="flex items-center gap-1.5 bg-white/80 px-2.5 py-1 rounded-lg border border-orange-200/40">
                 <LogIn className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Entry Window: <strong>{config.entryStartTime} - {config.entryEndTime}</strong></span>
+                <span>प्रवेश समय (Entry): <strong>{config.entryStartTime} - {config.entryEndTime}</strong></span>
               </span>
               <span className="flex items-center gap-1.5 bg-white/80 px-2.5 py-1 rounded-lg border border-orange-200/40">
                 <ExitIcon className="w-3.5 h-3.5 text-blue-600" />
-                <span>Exit Window: <strong>{config.exitStartTime} - {config.exitEndTime}</strong></span>
+                <span>प्रस्थान समय (Exit): <strong>{config.exitStartTime} - {config.exitEndTime}</strong></span>
               </span>
             </div>
           </div>
@@ -303,7 +303,7 @@ export default function DailyScansPage() {
           {/* Turnout Card */}
           <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs space-y-2">
             <div className="flex items-center justify-between text-slate-400">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Day Turnout</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">दैनिक उपस्थिति (Turnout)</span>
               <div className="p-2 rounded-xl bg-orange-50 text-orange-600">
                 <Users className="w-4 h-4" />
               </div>
@@ -313,7 +313,7 @@ export default function DailyScansPage() {
               <span className="text-xs font-semibold text-slate-400">/ {summary.totalParticipants}</span>
             </div>
             <div className="flex items-center justify-between text-xs text-slate-500 pt-1 border-t border-slate-100">
-              <span>Attendance Rate</span>
+              <span>उपस्थिति प्रतिशत</span>
               <span className="font-bold text-orange-600">{turnoutPercent}%</span>
             </div>
           </div>
@@ -321,17 +321,17 @@ export default function DailyScansPage() {
           {/* Gifts / Props Distributed */}
           <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs space-y-2">
             <div className="flex items-center justify-between text-slate-400">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Gifts / Props</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">उपहार / प्रॉप (Gifts)</span>
               <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600">
                 <Gift className="w-4 h-4" />
               </div>
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-3xl font-extrabold text-emerald-700">{summary.giftDistributed}</span>
-              <span className="text-xs font-semibold text-slate-400">given</span>
+              <span className="text-xs font-semibold text-slate-400">वितरित</span>
             </div>
             <div className="flex items-center justify-between text-xs text-slate-500 pt-1 border-t border-slate-100">
-              <span>Pending Gifts</span>
+              <span>देना बाकी</span>
               <span className="font-semibold text-amber-600">{summary.pendingGift}</span>
             </div>
           </div>
@@ -339,17 +339,17 @@ export default function DailyScansPage() {
           {/* Food Packets Distributed */}
           <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs space-y-2">
             <div className="flex items-center justify-between text-slate-400">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Food Packets</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">भोजन पैकेट (Food)</span>
               <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
                 <UtensilsCrossed className="w-4 h-4" />
               </div>
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-3xl font-extrabold text-blue-700">{summary.foodDistributed}</span>
-              <span className="text-xs font-semibold text-slate-400">given</span>
+              <span className="text-xs font-semibold text-slate-400">वितरित</span>
             </div>
             <div className="flex items-center justify-between text-xs text-slate-500 pt-1 border-t border-slate-100">
-              <span>Pending Packets</span>
+              <span>देना बाकी</span>
               <span className="font-semibold text-amber-600">{summary.pendingFood}</span>
             </div>
           </div>
@@ -357,17 +357,17 @@ export default function DailyScansPage() {
           {/* Total Registered Active */}
           <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs space-y-2">
             <div className="flex items-center justify-between text-slate-400">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Pending Turnout</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">आना बाकी (Pending)</span>
               <div className="p-2 rounded-xl bg-purple-50 text-purple-600">
                 <Clock className="w-4 h-4" />
               </div>
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-3xl font-extrabold text-slate-700">{summary.pendingTurnout}</span>
-              <span className="text-xs font-semibold text-slate-400">yet to arrive</span>
+              <span className="text-xs font-semibold text-slate-400">प्रतीक्षारत</span>
             </div>
             <div className="flex items-center justify-between text-xs text-slate-500 pt-1 border-t border-slate-100">
-              <span>Total Active Passes</span>
+              <span>कुल सक्रिय पास</span>
               <span className="font-bold text-slate-800">{summary.totalParticipants}</span>
             </div>
           </div>
@@ -378,10 +378,10 @@ export default function DailyScansPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h2 className="font-bold text-base text-slate-900">
-                Participant Scans Log
+                प्रतिभागी स्कैन सूची
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                Detailed scan entries recorded on {selectedDate} (Day {selectedDay})
+                {selectedDate} (दिवस {selectedDay}) पर दर्ज किए गए स्कैन
               </p>
             </div>
 
@@ -391,7 +391,7 @@ export default function DailyScansPage() {
                 <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
-                  placeholder="Search participant..."
+                  placeholder="नाम या आईडी से खोजें..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full sm:w-56 pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-orange-500 focus:bg-white"
@@ -403,10 +403,10 @@ export default function DailyScansPage() {
                 onChange={(e) => setStatusFilter(e.target.value as 'all' | 'both' | 'gift_only' | 'food_only')}
                 className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-1 focus:ring-orange-500"
               >
-                <option value="all">All Scans ({scans.length})</option>
-                <option value="both">Both Claimed</option>
-                <option value="gift_only">Gift Only</option>
-                <option value="food_only">Food Only</option>
+                <option value="all">सभी स्कैन ({scans.length})</option>
+                <option value="both">दोनों सामग्री वितरित</option>
+                <option value="gift_only">केवल उपहार वितरित</option>
+                <option value="food_only">केवल भोजन वितरित</option>
               </select>
             </div>
           </div>
@@ -414,22 +414,22 @@ export default function DailyScansPage() {
           {loading ? (
             <div className="flex flex-col items-center justify-center py-16 text-slate-400 gap-2">
               <Loader2 className="w-6 h-6 animate-spin text-orange-500" />
-              <span className="text-xs">Loading scans for Day {selectedDay}...</span>
+              <span className="text-xs">दिवस {selectedDay} के स्कैन लोड हो रहे हैं...</span>
             </div>
           ) : filteredScans.length === 0 ? (
             <div className="text-center py-16 text-slate-400 text-xs border border-dashed border-slate-200 rounded-2xl">
-              No scans recorded for Day {selectedDay} matching your criteria.
+              दिवस {selectedDay} के लिए कोई स्कैन रिकॉर्ड नहीं मिला।
             </div>
           ) : (
             <div className="overflow-x-auto -mx-6 sm:mx-0">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-slate-200 bg-slate-50/70 text-slate-500 uppercase tracking-wider text-[10px] font-semibold">
-                    <th className="py-3 px-4 rounded-l-xl">Participant</th>
-                    <th className="py-3 px-3">First Check-in</th>
-                    <th className="py-3 px-3">Gift / Prop</th>
-                    <th className="py-3 px-3">Food Packet</th>
-                    <th className="py-3 px-4 rounded-r-xl text-right">Actions</th>
+                    <th className="py-3 px-4 rounded-l-xl">प्रतिभागी</th>
+                    <th className="py-3 px-3">प्रथम प्रवेश</th>
+                    <th className="py-3 px-3">उपहार / प्रॉप</th>
+                    <th className="py-3 px-3">भोजन पैकेट</th>
+                    <th className="py-3 px-4 rounded-r-xl text-right">विवरण</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-medium">
@@ -447,7 +447,7 @@ export default function DailyScansPage() {
                             </span>
                           </div>
                           <span className="text-[11px] text-slate-400 pl-0.5">
-                            D/o: {record.participant.fatherName}
+                            पिता / अभिभावक: {record.participant.fatherName}
                           </span>
                         </div>
                       </td>
@@ -467,7 +467,7 @@ export default function DailyScansPage() {
                           <div className="flex flex-col">
                             <span className="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md text-[11px] font-semibold w-fit">
                               <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                              Claimed
+                              वितरित
                             </span>
                             <span className="text-[10px] text-slate-400 mt-0.5">
                               {record.giftClaimedAt && new Date(record.giftClaimedAt).toLocaleTimeString('en-IN', {
@@ -481,7 +481,7 @@ export default function DailyScansPage() {
                         ) : (
                           <span className="inline-flex items-center gap-1 text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md text-[11px]">
                             <XCircle className="w-3 h-3 text-slate-300" />
-                            Pending
+                            बाकी
                           </span>
                         )}
                       </td>
@@ -492,7 +492,7 @@ export default function DailyScansPage() {
                           <div className="flex flex-col">
                             <span className="inline-flex items-center gap-1 text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-md text-[11px] font-semibold w-fit">
                               <CheckCircle2 className="w-3 h-3 text-blue-600" />
-                              Claimed
+                              वितरित
                             </span>
                             <span className="text-[10px] text-slate-400 mt-0.5">
                               {record.foodClaimedAt && new Date(record.foodClaimedAt).toLocaleTimeString('en-IN', {
@@ -506,7 +506,7 @@ export default function DailyScansPage() {
                         ) : (
                           <span className="inline-flex items-center gap-1 text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md text-[11px]">
                             <XCircle className="w-3 h-3 text-slate-300" />
-                            Pending
+                            बाकी
                           </span>
                         )}
                       </td>
@@ -518,7 +518,7 @@ export default function DailyScansPage() {
                             href={`/admin/participants/${record.participant.id}`}
                             className="inline-flex items-center gap-1 text-slate-500 hover:text-orange-600 hover:bg-orange-50 px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors"
                           >
-                            <span>Profile</span>
+                            <span>प्रोफाइल</span>
                             <ExternalLink className="w-3 h-3" />
                           </Link>
                         )}

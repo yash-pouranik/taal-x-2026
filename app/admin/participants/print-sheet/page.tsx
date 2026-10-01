@@ -77,7 +77,7 @@ export default function BulkPrintSheetPage() {
   return (
     <div className="min-h-screen bg-slate-100 print:bg-white text-slate-900">
       {/* Top Toolbar (Hidden on Print) */}
-      <header className="bg-white border-b border-slate-200/80 px-6 py-4 shadow-xs print:hidden sticky top-0 z-20">
+      <header className="bg-white border-b border-slate-200/80 px-4 sm:px-6 py-4 shadow-xs print:hidden sticky top-0 z-20">
         <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <Link
@@ -85,13 +85,13 @@ export default function BulkPrintSheetPage() {
               className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-50 border border-slate-200 px-3.5 py-2 rounded-xl transition-colors"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Back to Participants</span>
+              <span>प्रतिभागी सूची पर वापस जाएं</span>
             </Link>
             <div>
               <h1 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                <span>A4 Bulk Card Print Sheets</span>
+                <span>A4 बल्क कार्ड प्रिंट शीट</span>
                 <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
-                  {filtered.length} Cards
+                  {filtered.length} पास
                 </span>
               </h1>
             </div>
@@ -102,34 +102,34 @@ export default function BulkPrintSheetPage() {
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
-                placeholder="Filter by name / ID..."
+                placeholder="नाम या आईडी से खोजें..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs w-48 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all placeholder:text-slate-400"
+                className="pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs w-44 sm:w-48 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all placeholder:text-slate-400"
               />
             </div>
 
             <button
               onClick={() => window.print()}
               disabled={loading || filtered.length === 0}
-              className="bg-orange-600 hover:bg-orange-700 disabled:bg-slate-300 text-white px-5 py-2.5 rounded-xl font-semibold shadow-sm shadow-orange-600/20 flex items-center gap-2 text-xs transition-all"
+              className="bg-orange-600 hover:bg-orange-700 disabled:bg-slate-300 text-white px-4 sm:px-5 py-2.5 rounded-xl font-semibold shadow-sm shadow-orange-600/20 flex items-center gap-2 text-xs transition-all"
             >
               <Printer className="w-4 h-4" />
-              <span>Print {filtered.length} Passes</span>
+              <span>{filtered.length} पास प्रिंट करें</span>
               <span className="text-[11px] bg-orange-800/40 px-2 py-0.5 rounded-full font-mono">
-                {pages.length} {pages.length === 1 ? 'Sheet' : 'Sheets'}
+                {pages.length} शीट
               </span>
             </button>
           </div>
         </div>
 
-        <div className="max-w-6xl mx-auto mt-3 text-xs text-slate-500 flex items-center justify-between border-t border-slate-100 pt-2">
+        <div className="max-w-6xl mx-auto mt-3 text-xs text-slate-500 flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-t border-slate-100 pt-2">
           <span className="flex items-center gap-1.5 text-slate-600 font-medium">
-            <FileCheck className="w-3.5 h-3.5 text-emerald-600" />
-            <span>8 ID-sized cards per A4 page. 1,000 cards only take ~125 sheets.</span>
+            <FileCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+            <span>प्रति A4 पेज पर 8 कार्ड। 1,000 कार्ड केवल ~125 शीट में प्रिंट हो जाते हैं।</span>
           </span>
           <span className="text-slate-400">
-            Set printer margins to &quot;None&quot; or &quot;Minimum&quot; for optimal cut alignment.
+            सटीक कटिंग के लिए प्रिंटर मार्जिन &quot;None&quot; या &quot;Minimum&quot; सेट करें।
           </span>
         </div>
       </header>
@@ -139,11 +139,11 @@ export default function BulkPrintSheetPage() {
         {loading ? (
           <div className="flex flex-col items-center justify-center py-24 text-slate-400 gap-3">
             <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
-            <span className="text-sm font-medium">Rendering A4 sheets and QR tokens...</span>
+            <span className="text-sm font-medium">A4 शीट और QR कोड तैयार हो रहे हैं...</span>
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-24 text-slate-400 text-sm">
-            No participants found matching the filter.
+            खोज के अनुसार कोई प्रतिभागी नहीं मिले।
           </div>
         ) : (
           pages.map((pageGroup, pageIndex) => (
@@ -192,23 +192,23 @@ export default function BulkPrintSheetPage() {
                           {p.name}
                         </h2>
                         <p className="text-[11px] text-slate-500 mt-1 font-medium leading-snug">
-                          Daughter of:
+                          पिता:
                         </p>
                         <p className="text-xs font-semibold text-slate-800 truncate">
                           {p.fatherName}
                         </p>
                         <p className="text-[10px] text-slate-400 mt-1.5 leading-tight font-medium">
-                          Daily Distribution Pass
+                          दैनिक वितरण पास
                         </p>
                       </div>
                     </div>
 
                     {/* Footer / Cut Marker */}
                     <div className="border-t border-slate-100 pt-1 flex justify-between items-center text-[9px] text-slate-400 font-mono">
-                      <span>★ 9-DAY PROP PASS</span>
+                      <span>★ ९-दिवसीय सामग्री पास</span>
                       <span className="flex items-center gap-0.5">
                         <Scissors className="w-2.5 h-2.5 text-slate-400" />
-                        <span>CUT ALONG DASHED LINE</span>
+                        <span>डैश लाइन से काटें</span>
                       </span>
                     </div>
                   </div>

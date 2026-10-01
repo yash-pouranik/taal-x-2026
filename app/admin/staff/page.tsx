@@ -97,45 +97,45 @@ export default function StaffPage() {
       {/* Confirmation Dialog for Deleting Staff */}
       <ConfirmDialog
         isOpen={!!staffToDelete}
-        title={`Remove ${staffToDelete?.name}?`}
-        description={`This will permanently delete the staff login account (${staffToDelete?.email}). They will no longer be able to log in or scan QR codes.`}
-        confirmText="Yes, Delete Staff"
-        cancelText="Cancel"
+        title={`${staffToDelete?.name} को हटाएं?`}
+        description={`यह कार्यकर्ता लॉगिन खाता (${staffToDelete?.email}) स्थायी रूप से हटा देगा। वे आगे से लॉगिन या QR स्कैन नहीं कर सकेंगे।`}
+        confirmText="हाँ, कार्यकर्ता हटाएं"
+        cancelText="रद्द करें"
         variant="danger"
         onConfirm={handleConfirmDelete}
         onCancel={() => setStaffToDelete(null)}
       />
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-                Staff &amp; Volunteers
+                कार्यकर्ता व स्वयंसेवक
               </h1>
               <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-200/80 text-slate-700">
                 {staff.length}
               </span>
             </div>
             <p className="text-sm text-slate-500 mt-1">
-              Create and manage volunteer scanner accounts for event counters.
+              वितरण काउंटरों के लिए कार्यकर्ता स्कैनर खाते बनाएं और प्रबंधित करें।
             </p>
           </div>
 
           <button
             onClick={() => setShowForm(!showForm)}
-            className="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white px-4 py-2.5 rounded-xl font-semibold transition-all text-sm shadow-sm shadow-orange-600/20"
+            className="inline-flex items-center justify-center gap-2 bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white px-4 py-2.5 rounded-xl font-semibold transition-all text-sm shadow-sm shadow-orange-600/20 self-start sm:self-auto"
           >
             {showForm ? (
               <>
                 <X className="w-4 h-4" />
-                <span>Close Form</span>
+                <span>फॉर्म बंद करें</span>
               </>
             ) : (
               <>
                 <Plus className="w-4 h-4" />
-                <span>Add Staff Member</span>
+                <span>नया कार्यकर्ता जोड़ें</span>
               </>
             )}
           </button>
@@ -143,11 +143,11 @@ export default function StaffPage() {
 
         {/* Add Staff Card */}
         {showForm && (
-          <div className="bg-white rounded-3xl shadow-sm border border-slate-200/80 p-6 sm:p-8 mb-8 animate-in fade-in slide-in-from-top-4 duration-200">
+          <div className="bg-white rounded-3xl shadow-sm border border-slate-200/80 p-5 sm:p-8 mb-8 animate-in fade-in slide-in-from-top-4 duration-200">
             <div className="flex items-center gap-2.5 mb-5 pb-3 border-b border-slate-100">
               <ShieldCheck className="w-5 h-5 text-orange-600" />
               <h2 className="font-bold text-base text-slate-900">
-                Create Volunteer / Scanner Account
+                नया कार्यकर्ता / स्कैनर खाता बनाएं
               </h2>
             </div>
 
@@ -155,14 +155,14 @@ export default function StaffPage() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Staff Name
+                    कार्यकर्ता का पूरा नाम
                   </label>
                   <div className="relative">
                     <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                     <input
                       type="text"
                       required
-                      placeholder="e.g. Rahul Sharma"
+                      placeholder="उदा. राहुल शर्मा"
                       value={form.name}
                       onChange={(e) =>
                         setForm((prev) => ({ ...prev, name: e.target.value }))
@@ -174,7 +174,7 @@ export default function StaffPage() {
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Login Email
+                    लॉगिन ईमेल (Email)
                   </label>
                   <div className="relative">
                     <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -193,7 +193,7 @@ export default function StaffPage() {
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Initial Password
+                    पासवर्ड (Password)
                   </label>
                   <div className="relative">
                     <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -224,14 +224,14 @@ export default function StaffPage() {
                   onClick={() => setShowForm(false)}
                   className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50"
                 >
-                  Cancel
+                  रद्द करें
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
                   className="bg-orange-600 hover:bg-orange-700 text-white px-5 py-2 rounded-xl text-xs font-semibold shadow-xs"
                 >
-                  {loading ? 'Creating...' : 'Create Account'}
+                  {loading ? 'खाता बन रहा है...' : 'खाता बनाएं'}
                 </button>
               </div>
             </form>
@@ -240,78 +240,80 @@ export default function StaffPage() {
 
         {/* Staff Table */}
         <div className="bg-white rounded-2xl shadow-xs border border-slate-200/80 overflow-hidden">
-          <table className="w-full text-left border-collapse text-sm">
-            <thead>
-              <tr className="bg-slate-50/80 border-b border-slate-200/80 text-xs font-semibold uppercase tracking-wider text-slate-500">
-                <th className="px-6 py-3.5">Name</th>
-                <th className="px-6 py-3.5">Email</th>
-                <th className="px-6 py-3.5">Status</th>
-                <th className="px-6 py-3.5 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {tableLoading ? (
-                <tr>
-                  <td colSpan={4} className="text-center py-12 text-slate-400">
-                    <Loader2 className="w-5 h-5 animate-spin mx-auto text-orange-500" />
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-sm min-w-[550px]">
+              <thead>
+                <tr className="bg-slate-50/80 border-b border-slate-200/80 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  <th className="px-6 py-3.5">नाम</th>
+                  <th className="px-6 py-3.5">ईमेल</th>
+                  <th className="px-6 py-3.5">स्थिति</th>
+                  <th className="px-6 py-3.5 text-right">कार्य</th>
                 </tr>
-              ) : staff.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="text-center py-12 text-slate-400">
-                    No staff members created yet. Click &quot;Add Staff Member&quot; to create one.
-                  </td>
-                </tr>
-              ) : (
-                staff.map((s) => (
-                  <tr key={s._id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="px-6 py-4 font-semibold text-slate-900">
-                      {s.name}
-                    </td>
-                    <td className="px-6 py-4 text-slate-600 font-mono text-xs">
-                      {s.email}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
-                          s.isActive
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
-                            : 'bg-slate-100 text-slate-500 border border-slate-200'
-                        }`}
-                      >
-                        <span
-                          className={`w-1.5 h-1.5 rounded-full ${
-                            s.isActive ? 'bg-emerald-500' : 'bg-slate-400'
-                          }`}
-                        />
-                        <span>{s.isActive ? 'Active' : 'Disabled'}</span>
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => toggleActive(s._id, s.isActive)}
-                          className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 transition-colors"
-                          title={s.isActive ? 'Disable Account' : 'Activate Account'}
-                        >
-                          <Power className="w-3.5 h-3.5 text-slate-500" />
-                          <span>{s.isActive ? 'Disable' : 'Enable'}</span>
-                        </button>
-                        <button
-                          onClick={() => setStaffToDelete(s)}
-                          className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-red-200 hover:bg-red-50 text-red-600 transition-colors"
-                          title="Delete staff"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          <span>Delete</span>
-                        </button>
-                      </div>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {tableLoading ? (
+                  <tr>
+                    <td colSpan={4} className="text-center py-12 text-slate-400">
+                      <Loader2 className="w-5 h-5 animate-spin mx-auto text-orange-500" />
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : staff.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="text-center py-12 text-slate-400">
+                      अभी तक कोई कार्यकर्ता नहीं बनाया गया है। &quot;नया कार्यकर्ता जोड़ें&quot; पर क्लिक करें।
+                    </td>
+                  </tr>
+                ) : (
+                  staff.map((s) => (
+                    <tr key={s._id} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="px-6 py-4 font-semibold text-slate-900">
+                        {s.name}
+                      </td>
+                      <td className="px-6 py-4 text-slate-600 font-mono text-xs">
+                        {s.email}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
+                            s.isActive
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
+                              : 'bg-slate-100 text-slate-500 border border-slate-200'
+                          }`}
+                        >
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              s.isActive ? 'bg-emerald-500' : 'bg-slate-400'
+                            }`}
+                          />
+                          <span>{s.isActive ? 'सक्रिय' : 'निष्क्रिय'}</span>
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => toggleActive(s._id, s.isActive)}
+                            className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 transition-colors"
+                            title={s.isActive ? 'खाता निष्क्रिय करें' : 'खाता सक्रिय करें'}
+                          >
+                            <Power className="w-3.5 h-3.5 text-slate-500" />
+                            <span>{s.isActive ? 'निष्क्रिय करें' : 'सक्रिय करें'}</span>
+                          </button>
+                          <button
+                            onClick={() => setStaffToDelete(s)}
+                            className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-red-200 hover:bg-red-50 text-red-600 transition-colors"
+                            title="कार्यकर्ता हटाएं"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>हटाएं</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </main>
     </div>

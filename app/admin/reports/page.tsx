@@ -12,13 +12,13 @@ export default function ReportsPage() {
     <div className="min-h-screen bg-slate-50/70">
       <AdminNav />
 
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <div className="mb-8">
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-            Export Reports
+            रिपोर्ट्स डाउनलोड करें (CSV)
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Download comprehensive CSV datasets for offline audit, event records, and committee meetings.
+            ऑफलाइन ऑडिट, समिति बैठकों और रिकॉर्ड के लिए संपूर्ण CSV डेटाशीट डाउनलोड करें।
           </p>
         </div>
 
@@ -31,10 +31,10 @@ export default function ReportsPage() {
               </div>
 
               <h2 className="text-lg font-bold text-slate-900">
-                Participant Master List
+                प्रतिभागी मास्टर सूची
               </h2>
               <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
-                Complete register of all girls enrolled in the system including Participant ID, Name, Father&apos;s Name, and registration date in IST.
+                सिस्टम में पंजीकृत सभी बालिकाओं की पूरी सूची जिसमें प्रतिभागी आईडी, नाम, पिता का नाम और पंजीकरण तिथि (IST) शामिल है।
               </p>
 
               <div className="mt-4 flex flex-wrap gap-2 text-[11px] text-slate-600">
@@ -54,7 +54,7 @@ export default function ReportsPage() {
                 className="w-full inline-flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-xl font-semibold text-xs shadow-xs transition-colors"
               >
                 <Download className="w-4 h-4" />
-                <span>Download Participant CSV</span>
+                <span>प्रतिभागी सूची डाउनलोड करें (CSV)</span>
               </a>
             </div>
           </div>
@@ -67,10 +67,10 @@ export default function ReportsPage() {
               </div>
 
               <h2 className="text-lg font-bold text-slate-900">
-                Distribution Audit Log
+                दैनिक वितरण ऑडिट रिपोर्ट
               </h2>
               <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
-                Detailed record of every prop handed out. Includes Participant ID, Name, Navratri Day, IST Timestamp, and the specific volunteer who verified the claim.
+                वितरित किए गए प्रत्येक उपहार/भोजन पैकेट का विस्तृत विवरण। इसमें प्रतिभागी आईडी, नाम, नवरात्रि दिवस, समय (IST) और सत्यापित करने वाले कार्यकर्ता का नाम शामिल है।
               </p>
 
               <div className="mt-4 flex flex-wrap gap-2 text-[11px] text-slate-600">
@@ -78,7 +78,7 @@ export default function ReportsPage() {
                   distribution-report.csv
                 </span>
                 <span className="px-2 py-0.5 rounded-md bg-slate-100">
-                  Full Audit Trail
+                  संपूर्ण ऑडिट रिकॉर्ड
                 </span>
               </div>
             </div>
@@ -90,7 +90,7 @@ export default function ReportsPage() {
                 className="w-full inline-flex items-center justify-center gap-2 bg-orange-600 hover:bg-orange-700 text-white py-3 rounded-xl font-semibold text-xs shadow-sm shadow-orange-600/20 transition-colors"
               >
                 <Download className="w-4 h-4" />
-                <span>Download Distribution CSV</span>
+                <span>वितरण रिपोर्ट डाउनलोड करें (CSV)</span>
               </a>
             </div>
           </div>

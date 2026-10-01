@@ -40,7 +40,7 @@ export default function RegisterParticipantPage() {
       })
       const data = await res.json()
       if (!res.ok) {
-        setError(data.error || 'Registration failed')
+        setError(data.error || 'पंजीकरण विफल रहा')
         return
       }
 
@@ -59,7 +59,7 @@ export default function RegisterParticipantPage() {
         dataUrl: qrData.dataUrl,
       })
     } catch {
-      setError('Network error. Please try again.')
+      setError('नेटवर्क त्रुटि। कृपया पुनः प्रयास करें।')
     } finally {
       setLoading(false)
     }
@@ -69,25 +69,25 @@ export default function RegisterParticipantPage() {
     <div className="min-h-screen bg-slate-50/70">
       <AdminNav />
 
-      <main className="max-w-2xl mx-auto px-4 sm:px-6 py-8">
+      <main className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <div className="mb-6">
           <Link
             href="/admin/participants"
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Back to Participants</span>
+            <span>प्रतिभागी सूची पर वापस जाएं</span>
           </Link>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 mt-2">
-            Register New Participant
+            नया प्रतिभागी पंजीकरण
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Register participant with name &amp; father&apos;s name. A unique QR token will be generated immediately.
+            प्रतिभागी का नाम और पिता का नाम दर्ज करें। तुरंत एक विशिष्ट QR कोड जनरेट होगा।
           </p>
         </div>
 
         {success ? (
-          <div className="bg-white rounded-3xl shadow-sm border border-slate-200/80 p-8 sm:p-10 text-center animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-3xl shadow-sm border border-slate-200/80 p-6 sm:p-10 text-center animate-in fade-in zoom-in-95 duration-200">
             <div className="w-14 h-14 bg-emerald-50 border border-emerald-100 rounded-2xl flex items-center justify-center text-emerald-600 mx-auto mb-4">
               <CheckCircle2 className="w-8 h-8" />
             </div>
@@ -99,8 +99,8 @@ export default function RegisterParticipantPage() {
             <h2 className="text-2xl font-bold text-slate-900 mt-2">
               {success.name}
             </h2>
-            <p className="text-xs text-slate-400 mt-1">
-              Registered successfully. QR token generated &amp; secured.
+            <p className="text-xs text-slate-500 mt-1">
+              सफलतापूर्वक पंजीकृत हुआ! QR कोड तैयार और सुरक्षित है।
             </p>
 
             <div className="my-6 p-4 bg-slate-50 rounded-2xl border border-slate-100 inline-block">
@@ -112,21 +112,21 @@ export default function RegisterParticipantPage() {
               />
             </div>
 
-            <div className="flex flex-wrap gap-3 justify-center">
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link
                 href={`/admin/participants/${success._id}/print`}
-                className="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-5 py-2.5 rounded-xl font-semibold text-sm shadow-sm transition-all"
+                className="inline-flex items-center justify-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-5 py-2.5 rounded-xl font-semibold text-sm shadow-sm transition-all"
               >
                 <Printer className="w-4 h-4" />
-                <span>Print Pass</span>
+                <span>पास प्रिंट करें</span>
               </Link>
               <a
                 href={success.dataUrl}
                 download={`qr-${success.participantId}.png`}
-                className="inline-flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-5 py-2.5 rounded-xl font-semibold text-sm shadow-xs transition-all"
+                className="inline-flex items-center justify-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-5 py-2.5 rounded-xl font-semibold text-sm shadow-xs transition-all"
               >
                 <Download className="w-4 h-4" />
-                <span>Download QR</span>
+                <span>QR डाउनलोड करें</span>
               </a>
               <button
                 onClick={() => {
@@ -134,19 +134,19 @@ export default function RegisterParticipantPage() {
                   setName('')
                   setFatherName('')
                 }}
-                className="inline-flex items-center gap-2 border border-slate-200 hover:bg-slate-50 text-slate-700 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all"
+                className="inline-flex items-center justify-center gap-2 border border-slate-200 hover:bg-slate-50 text-slate-700 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all"
               >
                 <UserPlus className="w-4 h-4" />
-                <span>Register Another</span>
+                <span>अन्य पंजीकरण करें</span>
               </button>
             </div>
           </div>
         ) : (
-          <div className="bg-white rounded-3xl shadow-sm border border-slate-200/80 p-8 sm:p-10">
+          <div className="bg-white rounded-3xl shadow-sm border border-slate-200/80 p-6 sm:p-10">
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
-                  Full Name (Girl Participant) *
+                  प्रतिभागी का पूरा नाम *
                 </label>
                 <div className="relative">
                   <User className="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -156,14 +156,14 @@ export default function RegisterParticipantPage() {
                     onChange={(e) => setName(e.target.value)}
                     required
                     className="w-full pl-11 pr-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all placeholder:text-slate-400"
-                    placeholder="e.g. Priya Sharma"
+                    placeholder="उदा. प्रिया शर्मा"
                   />
                 </div>
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
-                  Father&apos;s / Guardian&apos;s Name *
+                  पिता / अभिभावक का नाम *
                 </label>
                 <div className="relative">
                   <User className="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -173,7 +173,7 @@ export default function RegisterParticipantPage() {
                     onChange={(e) => setFatherName(e.target.value)}
                     required
                     className="w-full pl-11 pr-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all placeholder:text-slate-400"
-                    placeholder="e.g. Ramesh Sharma"
+                    placeholder="उदा. रमेश शर्मा"
                   />
                 </div>
               </div>
@@ -194,12 +194,12 @@ export default function RegisterParticipantPage() {
                   {loading ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Generating QR &amp; Saving...</span>
+                      <span>QR कोड जनरेट व सुरक्षित हो रहा है...</span>
                     </>
                   ) : (
                     <>
                       <Sparkles className="w-4 h-4" />
-                      <span>Register &amp; Generate QR</span>
+                      <span>पंजीकरण करें व QR कोड बनाएं</span>
                     </>
                   )}
                 </button>

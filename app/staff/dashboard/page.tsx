@@ -46,8 +46,8 @@ export default function StaffDashboard() {
               <span className="font-bold text-sm block leading-tight">
                 Navratri 2026
               </span>
-              <span className="text-[10px] text-orange-400 font-semibold uppercase tracking-wider">
-                Staff Counter
+              <span className="text-[10px] text-orange-400 font-semibold tracking-wider">
+                कार्यकर्ता काउंटर
               </span>
             </div>
           </div>
@@ -57,7 +57,7 @@ export default function StaffDashboard() {
             className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-red-400 bg-slate-800 hover:bg-slate-700/80 border border-slate-700 px-3 py-1.5 rounded-xl transition-colors"
           >
             <LogOut className="w-3.5 h-3.5" />
-            <span>Sign Out</span>
+            <span>लॉग आउट</span>
           </button>
         </div>
       </header>
@@ -66,11 +66,11 @@ export default function StaffDashboard() {
       <main className="flex-1 flex flex-col items-center justify-center p-6 max-w-md mx-auto w-full gap-6">
         {/* Welcome */}
         <div className="text-center">
-          <span className="text-xs uppercase font-semibold text-slate-400 tracking-widest">
-            Volunteer On Duty
+          <span className="text-xs font-semibold text-slate-400 tracking-wider">
+            ड्यूटी पर कार्यकर्ता
           </span>
           <h1 className="text-2xl font-bold text-white mt-1">
-            {session?.user?.name || 'Staff Member'}
+            {session?.user?.name || 'कार्यकर्ता'}
           </h1>
         </div>
 
@@ -81,30 +81,30 @@ export default function StaffDashboard() {
           </div>
         ) : day ? (
           <div className="w-full bg-slate-800/90 rounded-3xl border border-slate-700 p-7 text-center shadow-xl shadow-black/20">
-            <span className="text-xs font-semibold text-orange-400 uppercase tracking-widest">
-              Today&apos;s Festival Day
+            <span className="text-xs font-semibold text-orange-400 tracking-wider">
+              आज का नवरात्रि दिवस
             </span>
             <div className="text-5xl font-black text-white mt-1.5 tracking-tight">
-              Day {day}
+              दिवस {day}
             </div>
 
             {stats && (
               <div className="mt-5 pt-4 border-t border-slate-700/80 flex items-center justify-center gap-4 text-xs">
                 <span className="flex items-center gap-1 text-emerald-400 font-medium">
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>{stats.todayCollected} Collected</span>
+                  <span>{stats.todayCollected} वितरित</span>
                 </span>
                 <span className="text-slate-600">•</span>
                 <span className="flex items-center gap-1 text-slate-400">
                   <Users className="w-3.5 h-3.5" />
-                  <span>{stats.totalParticipants} Total</span>
+                  <span>{stats.totalParticipants} कुल पास</span>
                 </span>
               </div>
             )}
           </div>
         ) : (
           <div className="w-full bg-slate-800/60 rounded-3xl border border-slate-700/80 p-6 text-center text-xs text-slate-400">
-            Event distribution is outside active festival dates.
+            आज का दिन सक्रिय नवरात्रि तिथियों से बाहर है।
           </div>
         )}
 
@@ -116,16 +116,16 @@ export default function StaffDashboard() {
           <div className="p-3 bg-white/10 rounded-2xl group-hover:scale-110 transition-transform">
             <QrCode className="w-8 h-8" />
           </div>
-          <span className="text-xl font-bold tracking-wide">OPEN QR SCANNER</span>
+          <span className="text-xl font-bold tracking-wide">QR स्कैनर खोलें</span>
           <span className="text-xs text-orange-200/80 font-medium">
-            Scan participant camera pass
+            प्रतिभागी का पास स्कैन करने के लिए टैप करें
           </span>
         </Link>
       </main>
 
       {/* Footer hint */}
       <footer className="py-4 text-center text-[11px] text-slate-500">
-        Navratri Festival Organization • Single Event Edition
+        नवरात्रि महोत्सव प्रबंधन • QR पास वितरण प्रणाली
       </footer>
     </div>
   )

@@ -23,7 +23,7 @@ export default function LoginPage() {
         redirect: false,
       })
       if (result?.error) {
-        setError('Invalid email or password.')
+        setError('अमान्य ईमेल या पासवर्ड।')
       } else {
         router.push('/')
         router.refresh()
@@ -41,7 +41,7 @@ export default function LoginPage() {
         <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-amber-200/40 rounded-full blur-3xl" />
       </div>
 
-      <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/60 border border-slate-100 p-8 sm:p-10 w-full max-w-md relative">
+      <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/60 border border-slate-100 p-6 sm:p-10 w-full max-w-md relative">
         {/* Brand Header */}
         <div className="text-center mb-8">
           <div className="inline-flex w-14 h-14 rounded-2xl bg-gradient-to-tr from-orange-600 to-amber-500 items-center justify-center text-white shadow-lg shadow-orange-500/25 mb-4">
@@ -51,7 +51,7 @@ export default function LoginPage() {
             Navratri 2026
           </h1>
           <p className="text-sm text-slate-500 mt-1.5 font-medium">
-            Prop Distribution &amp; Verification Portal
+            सामग्री वितरण एवं सत्यापन पोर्टल
           </p>
         </div>
 
@@ -59,7 +59,7 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
-              Email Address
+              ईमेल पता (Email)
             </label>
             <div className="relative">
               <Mail className="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -77,7 +77,7 @@ export default function LoginPage() {
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
-              Password
+              पासवर्ड (Password)
             </label>
             <div className="relative">
               <Lock className="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -108,11 +108,11 @@ export default function LoginPage() {
             {loading ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Signing In...</span>
+                <span>लॉगिन हो रहा है...</span>
               </>
             ) : (
               <>
-                <span>Sign In to Portal</span>
+                <span>पोर्टल में लॉगिन करें</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
               </>
             )}
@@ -120,7 +120,7 @@ export default function LoginPage() {
         </form>
 
         <div className="mt-8 text-center text-xs text-slate-400 font-medium">
-          Authorized Admin &amp; Staff Access Only
+          केवल अधिकृत प्रशासक और कार्यकर्ताओं के लिए
         </div>
       </div>
     </div>

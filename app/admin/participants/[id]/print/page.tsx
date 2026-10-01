@@ -35,7 +35,7 @@ export default function PrintPage() {
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-8">
         <div className="flex flex-col items-center gap-3 text-slate-400">
           <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
-          <span className="text-sm font-medium">Preparing printable pass...</span>
+          <span className="text-sm font-medium">प्रिंट पास तैयार हो रहा है...</span>
         </div>
       </div>
     )
@@ -50,14 +50,14 @@ export default function PrintPage() {
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 px-3.5 py-2 rounded-xl shadow-xs"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
-          <span>Back to Profile</span>
+          <span>प्रोफ़ाइल पर वापस जाएं</span>
         </Link>
         <button
           onClick={() => window.print()}
           className="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-5 py-2 rounded-xl font-semibold text-xs shadow-sm shadow-orange-600/20 transition-all"
         >
           <Printer className="w-4 h-4" />
-          <span>Print Pass</span>
+          <span>पास प्रिंट करें</span>
         </button>
       </div>
 
@@ -71,7 +71,7 @@ export default function PrintPage() {
           NAVRATRI 2026
         </h1>
         <p className="text-xs uppercase tracking-widest font-semibold text-orange-600 mt-0.5 mb-6">
-          Daily Prop Pass
+          दैनिक वितरण पास (Daily Pass)
         </p>
 
         {/* QR Code */}
@@ -89,8 +89,8 @@ export default function PrintPage() {
           <h2 className="text-xl font-bold text-slate-900">
             {participant.name}
           </h2>
-          <p className="text-xs text-slate-500 mt-1 font-medium">
-            Daughter of {participant.fatherName}
+          <p className="text-xs text-slate-600 mt-1 font-medium">
+            पिता: {participant.fatherName}
           </p>
           <div className="mt-2.5 inline-block">
             <span className="font-mono text-xs font-bold px-3 py-1 rounded-md bg-slate-100 text-slate-800">
@@ -99,8 +99,8 @@ export default function PrintPage() {
           </div>
         </div>
 
-        <p className="text-[11px] text-slate-400 mt-6 leading-relaxed">
-          Please present this QR pass at the distribution counter each day.
+        <p className="text-[11px] text-slate-500 mt-6 leading-relaxed">
+          कृपया प्रतिदिन वितरण काउंटर पर यह QR पास दिखाएं।
         </p>
       </div>
     </div>

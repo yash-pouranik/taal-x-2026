@@ -74,22 +74,22 @@ export default function ConfigPage() {
     <div className="min-h-screen bg-slate-50/70">
       <AdminNav />
 
-      <main className="max-w-2xl mx-auto px-4 sm:px-6 py-8">
+      <main className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <div className="mb-6">
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-            Event Configuration
+            कार्यक्रम तिथियां व समय सेटिंग्स
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Configure Navratri distribution dates. All calculations strictly use{' '}
-            <strong className="text-slate-800">Asia/Kolkata (IST)</strong> timezone.
+            नवरात्रि वितरण तिथियां और समय निर्धारित करें। सभी गणनाएं पूरी तरह से{' '}
+            <strong className="text-slate-800">Asia/Kolkata (IST)</strong> समय अनुसार होती हैं।
           </p>
         </div>
 
-        <div className="bg-white rounded-3xl shadow-xs border border-slate-200/80 p-8 sm:p-10">
+        <div className="bg-white rounded-3xl shadow-xs border border-slate-200/80 p-6 sm:p-10">
           {fetching ? (
             <div className="flex flex-col items-center justify-center py-12 text-slate-400 gap-2">
               <Loader2 className="w-6 h-6 animate-spin text-orange-500" />
-              <span className="text-xs">Loading event settings...</span>
+              <span className="text-xs">सेटिंग्स लोड हो रही हैं...</span>
             </div>
           ) : (
             <form onSubmit={handleSave} className="space-y-6">
@@ -99,10 +99,10 @@ export default function ConfigPage() {
                 </div>
                 <div>
                   <h2 className="text-sm font-bold text-slate-900">
-                    Navratri Distribution Window
+                    नवरात्रि वितरण अवधि (९ दिन)
                   </h2>
                   <p className="text-xs text-slate-400">
-                    Defines Day 1 to Day 9 mapping for QR verification
+                    QR सत्यापन हेतु दिवस १ से दिवस ९ का निर्धारण
                   </p>
                 </div>
               </div>
@@ -110,7 +110,7 @@ export default function ConfigPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
-                    Start Date (Day 1)
+                    प्रारंभ तिथि (दिवस १)
                   </label>
                   <div className="relative">
                     <Calendar className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -126,7 +126,7 @@ export default function ConfigPage() {
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
-                    End Date (Day 9)
+                    समाप्ति तिथि (दिवस ९)
                   </label>
                   <div className="relative">
                     <Calendar className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -146,7 +146,7 @@ export default function ConfigPage() {
                 <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4 text-orange-600" />
                   <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                    Daily Operational Time Windows (IST)
+                    दैनिक संचालन समय सीमा (IST)
                   </span>
                 </div>
 
@@ -154,12 +154,12 @@ export default function ConfigPage() {
                   {/* Entry Window */}
                   <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-200/70 space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-slate-700">Entry Time Window</span>
-                      <span className="text-[10px] font-semibold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">Arrival</span>
+                      <span className="text-xs font-bold text-slate-700">प्रवेश समय सीमा (Entry)</span>
+                      <span className="text-[10px] font-semibold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">आगमन</span>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <label className="block text-[11px] text-slate-500 mb-1">Start Time</label>
+                        <label className="block text-[11px] text-slate-500 mb-1">शुरू समय</label>
                         <input
                           type="time"
                           value={entryStartTime}
@@ -168,7 +168,7 @@ export default function ConfigPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-[11px] text-slate-500 mb-1">End Time</label>
+                        <label className="block text-[11px] text-slate-500 mb-1">समाप्ति समय</label>
                         <input
                           type="time"
                           value={entryEndTime}
@@ -182,12 +182,12 @@ export default function ConfigPage() {
                   {/* Exit Window */}
                   <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-200/70 space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-slate-700">Exit Time Window</span>
-                      <span className="text-[10px] font-semibold bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">Departure</span>
+                      <span className="text-xs font-bold text-slate-700">प्रस्थान समय सीमा (Exit)</span>
+                      <span className="text-[10px] font-semibold bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">प्रस्थान</span>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <label className="block text-[11px] text-slate-500 mb-1">Start Time</label>
+                        <label className="block text-[11px] text-slate-500 mb-1">शुरू समय</label>
                         <input
                           type="time"
                           value={exitStartTime}
@@ -196,7 +196,7 @@ export default function ConfigPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-[11px] text-slate-500 mb-1">End Time</label>
+                        <label className="block text-[11px] text-slate-500 mb-1">समाप्ति समय</label>
                         <input
                           type="time"
                           value={exitEndTime}
@@ -213,7 +213,7 @@ export default function ConfigPage() {
               <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-xl border border-slate-200/60 text-xs text-slate-600">
                 <Clock className="w-4 h-4 text-slate-400 shrink-0" />
                 <span>
-                  Business timezone enforced server-side:{' '}
+                  सर्वर द्वारा निर्धारित समय क्षेत्र:{' '}
                   <strong className="text-slate-900 font-mono">Asia/Kolkata (IST)</strong>
                 </span>
               </div>
@@ -229,7 +229,7 @@ export default function ConfigPage() {
                 <div className="flex items-center gap-2.5 bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-xl text-xs animate-in fade-in">
                   <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
                   <span className="font-semibold">
-                    Event configuration saved successfully.
+                    कार्यक्रम सेटिंग्स सफलतापूर्वक सुरक्षित कर दी गईं।
                   </span>
                 </div>
               )}
@@ -242,12 +242,12 @@ export default function ConfigPage() {
                 {loading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Saving Changes...</span>
+                    <span>सेटिंग्स सुरक्षित हो रही हैं...</span>
                   </>
                 ) : (
                   <>
                     <Save className="w-4 h-4" />
-                    <span>Save Event Dates</span>
+                    <span>सेटिंग्स सुरक्षित करें</span>
                   </>
                 )}
               </button>
@@ -259,7 +259,7 @@ export default function ConfigPage() {
         <div className="mt-5 bg-amber-50 border border-amber-200/80 rounded-2xl p-4 flex items-start gap-3 text-xs text-amber-900">
           <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
           <div className="leading-relaxed">
-            <strong>Important:</strong> Changing event dates mid-festival alters the calculated day numbers for prior distribution records. Only adjust prior to Day 1 or if event dates officially change.
+            <strong>महत्वपूर्ण सूचना:</strong> उत्सव के बीच में तिथियां बदलने से पहले के वितरण रिकॉर्ड की दिवस संख्या बदल सकती है। इसे केवल दिवस १ से पहले या आधिकारिक तिथि परिवर्तन होने पर ही बदलें।
           </div>
         </div>
       </main>

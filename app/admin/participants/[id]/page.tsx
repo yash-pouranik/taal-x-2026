@@ -212,10 +212,10 @@ export default function ParticipantDetailPage() {
       {/* Confirmation Dialog: Regenerate QR */}
       <ConfirmDialog
         isOpen={showRegenModal}
-        title="Regenerate QR Code?"
-        description="This will invalidate her existing physical/digital QR code. A new token will be generated. Old cards will be rejected at the counter. Only proceed if the card was lost or damaged."
-        confirmText="Yes, Invalidate &amp; Regenerate"
-        cancelText="Keep Existing QR"
+        title="नया QR कोड बनाएं (पुराना रद्द होगा)?"
+        description="यह प्रक्रिया एक नया गोपनीय QR टोकन बनाएगी। प्रतिभागी का पुराना भौतिक कार्ड अमान्य हो जाएगा और काउंटर पर अस्वीकार कर दिया जाएगा।"
+        confirmText="हाँ, नया QR बनाएं"
+        cancelText="रद्द करें"
         variant="warning"
         onConfirm={handleConfirmRegenerate}
         onCancel={() => setShowRegenModal(false)}
@@ -224,10 +224,10 @@ export default function ParticipantDetailPage() {
       {/* Confirmation Dialog: Cancel Registration */}
       <ConfirmDialog
         isOpen={showCancelModal}
-        title={`Cancel Registration for ${participant.name}?`}
-        description="Cancelling will immediately deactivate this participant's QR pass. Any volunteer scanning this pass will see 'Registration Cancelled' and prop distribution will be blocked. You can reactivate later if needed."
-        confirmText="Yes, Cancel Registration"
-        cancelText="Keep Active"
+        title={`क्या आप ${participant.name} का पास रद्द करना चाहते हैं?`}
+        description="पास रद्द करने से QR कोड तुरंत निष्क्रिय हो जाएगा। वितरण काउंटर पर स्वयंसेवक इसे स्कैन नहीं कर सकेंगे। आप इसे बाद में पुनः सक्रिय भी कर सकते हैं।"
+        confirmText="हाँ, पास रद्द करें"
+        cancelText="सक्रिय ही रखें"
         variant="warning"
         onConfirm={handleConfirmCancel}
         onCancel={() => setShowCancelModal(false)}
@@ -236,10 +236,10 @@ export default function ParticipantDetailPage() {
       {/* Confirmation Dialog: Reactivate Registration */}
       <ConfirmDialog
         isOpen={showReactivateModal}
-        title={`Reactivate ${participant.name}?`}
-        description="This will restore the participant to Active status. Her QR pass will once again be valid for daily prop collection."
-        confirmText="Yes, Reactivate Pass"
-        cancelText="Keep Cancelled"
+        title={`पास पुनः सक्रिय करें (${participant.name})?`}
+        description="प्रतिभागी को पुनः सक्रिय (Active) कर दिया जाएगा। उनका QR पास दैनिक वितरण के लिए दोबारा मान्य हो जाएगा।"
+        confirmText="हाँ, पुनः सक्रिय करें"
+        cancelText="रद्द ही रखें"
         variant="primary"
         onConfirm={handleConfirmReactivate}
         onCancel={() => setShowReactivateModal(false)}
@@ -248,10 +248,10 @@ export default function ParticipantDetailPage() {
       {/* Confirmation Dialog: Delete Permanently */}
       <ConfirmDialog
         isOpen={showDeleteModal}
-        title={`Permanently Delete ${participant.name}?`}
-        description={`This will erase ${participant.name} (${participant.participantId}) and all their claim history completely from the database. This action CANNOT be undone.`}
-        confirmText="Permanently Delete"
-        cancelText="Cancel"
+        title={`स्थायी रूप से हटाएं (${participant.name})?`}
+        description={`यह क्रिया ${participant.name} (${participant.participantId}) और उनके पूरे वितरण इतिहास को डेटाबेस से पूरी तरह मिटा देगी। यह वापस नहीं किया जा सकता।`}
+        confirmText="स्थायी रूप से हटाएं"
+        cancelText="रद्द करें"
         variant="danger"
         onConfirm={handleConfirmDelete}
         onCancel={() => setShowDeleteModal(false)}
@@ -265,7 +265,7 @@ export default function ParticipantDetailPage() {
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Back to Participants</span>
+            <span>प्रतिभागी सूची पर वापस जाएं</span>
           </Link>
 
           {/* Registration Status Pill */}
@@ -281,24 +281,24 @@ export default function ParticipantDetailPage() {
                 isCancelled ? 'bg-red-500' : 'bg-emerald-500'
               }`}
             />
-            <span>{isCancelled ? 'Registration Cancelled' : 'Active Pass'}</span>
+            <span>{isCancelled ? 'रजिस्ट्रेशन रद्द (Cancelled)' : 'सक्रिय पास (Active)'}</span>
           </span>
         </div>
 
         {/* Cancellation Notice Banner (Visible only if cancelled) */}
         {isCancelled && (
-          <div className="mb-6 bg-red-50 border border-red-200/80 rounded-3xl p-5 flex items-start justify-between gap-4">
+          <div className="mb-6 bg-red-50 border border-red-200/80 rounded-3xl p-5 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
             <div className="flex items-start gap-3">
               <AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
               <div>
                 <h3 className="text-sm font-bold text-red-900">
-                  This Registration Has Been Cancelled
+                  यह रजिस्ट्रेशन रद्द किया जा चुका है
                 </h3>
                 <p className="text-xs text-red-700 mt-1">
-                  The QR code for this participant is deactivated. Volunteers scanning this code will see &quot;Registration Cancelled&quot; and will not be able to distribute props.
+                  इस प्रतिभागी का QR कोड निष्क्रिय है। स्कैनर पर यह पास रद्द दिखाई देगा और कोई सामग्री नहीं दी जा सकेगी।
                   {participant.cancelledAt && (
                     <span className="block mt-0.5 text-red-600/80">
-                      Cancelled on: {new Date(participant.cancelledAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}
+                      रद्द करने की तिथि: {new Date(participant.cancelledAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}
                     </span>
                   )}
                 </p>
@@ -310,7 +310,7 @@ export default function ParticipantDetailPage() {
               disabled={actionLoading}
               className="shrink-0 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-4 py-2 rounded-xl transition-colors shadow-xs"
             >
-              Reactivate
+              पुनः सक्रिय करें
             </button>
           </div>
         )}
@@ -328,7 +328,7 @@ export default function ParticipantDetailPage() {
                       {participant.participantId}
                     </span>
                     <span className="text-xs text-slate-400">
-                      Joined{' '}
+                      पंजीकरण तिथि:{' '}
                       {new Date(participant.createdAt).toLocaleDateString('en-IN', {
                         timeZone: 'Asia/Kolkata',
                       })}
@@ -344,7 +344,7 @@ export default function ParticipantDetailPage() {
                     {participant.name}
                   </h1>
                   <p className="text-sm font-medium text-slate-600 mt-1 flex items-center gap-1.5">
-                    <span className="text-slate-400">Daughter of:</span>
+                    <span className="text-slate-400">पिता / अभिभावक:</span>
                     <span className="text-slate-800">{participant.fatherName}</span>
                   </p>
                 </div>
@@ -355,47 +355,48 @@ export default function ParticipantDetailPage() {
                     className="inline-flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-4 py-2.5 rounded-xl font-semibold text-xs shadow-xs transition-colors"
                   >
                     <Printer className="w-4 h-4" />
-                    <span>Print Single Card</span>
+                    <span>आईडी कार्ड प्रिंट करें</span>
                   </Link>
                 )}
               </div>
             </div>
 
             {/* 9-Day Distribution Matrix */}
+            {/* 9-Day Distribution Matrix */}
             <div className="bg-white rounded-3xl shadow-xs border border-slate-200/80 p-6 sm:p-7">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-3 border-b border-slate-100">
                 <div>
                   <h2 className="font-bold text-base text-slate-900">
-                    9-Day Distribution & Attendance Matrix
+                    9 दिवसीय वितरण एवं उपस्थिति सारणी
                   </h2>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Separate tracking for Prop/Gift, Food Packet, and Entry/Exit operational windows.
+                    उपहार/प्रॉप, भोजन पैकेट और प्रवेश/प्रस्थान समय का अलग-अलग विवरण।
                   </p>
                 </div>
                 <div className="flex items-center gap-3 text-xs font-semibold">
                   <span className="flex items-center gap-1.5 text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Claimed
+                    <CheckCircle2 className="w-3.5 h-3.5" /> वितरित
                   </span>
                   <span className="flex items-center gap-1.5 text-slate-500 bg-slate-50 px-2.5 py-1 rounded-full border border-slate-200">
-                    <XCircle className="w-3.5 h-3.5" /> Pending
+                    <XCircle className="w-3.5 h-3.5" /> बाकी
                   </span>
                 </div>
               </div>
 
               {dayGrid.length === 0 ? (
                 <div className="text-center py-8 text-slate-400 text-xs">
-                  Event dates not configured yet. Configure dates in Settings to view matrix.
+                  कार्यक्रम तिथियां सेटिंग्स में कॉन्फ़िगर नहीं हैं।
                 </div>
               ) : (
                 <div className="overflow-x-auto -mx-6 sm:mx-0">
                   <table className="w-full text-left text-xs border-collapse">
                     <thead>
                       <tr className="border-b border-slate-200 bg-slate-50/70 text-slate-500 uppercase tracking-wider text-[10px] font-semibold">
-                        <th className="py-3 px-4 rounded-l-xl">Day & Date</th>
-                        <th className="py-3 px-3">Entry Window</th>
-                        <th className="py-3 px-3">Gift / Prop</th>
-                        <th className="py-3 px-3">Food Packet</th>
-                        <th className="py-3 px-4 rounded-r-xl">Exit Window</th>
+                        <th className="py-3 px-4 rounded-l-xl">दिन व तारीख</th>
+                        <th className="py-3 px-3">प्रवेश समय (Entry)</th>
+                        <th className="py-3 px-3">उपहार / प्रॉप (Gift)</th>
+                        <th className="py-3 px-3">भोजन पैकेट (Food)</th>
+                        <th className="py-3 px-4 rounded-r-xl">प्रस्थान समय (Exit)</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 font-medium">
@@ -409,7 +410,7 @@ export default function ParticipantDetailPage() {
                             <td className="py-3.5 px-4 whitespace-nowrap">
                               <div className="flex items-center gap-2">
                                 <span className="font-bold text-slate-900 bg-orange-100/70 text-orange-800 text-[11px] px-2 py-0.5 rounded-md">
-                                  Day {d.day}
+                                  दिवस {d.day}
                                 </span>
                                 <span className="text-slate-600 text-xs font-mono">
                                   {d.date}
@@ -431,7 +432,7 @@ export default function ParticipantDetailPage() {
                                 <div className="inline-flex flex-col gap-0.5">
                                   <span className="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md text-[11px] font-semibold">
                                     <Gift className="w-3 h-3 text-emerald-600" />
-                                    Claimed
+                                    वितरित
                                   </span>
                                   {(d.gift?.claimedAt || d.claimInfo?.claimedAt) && (
                                     <span className="text-[10px] text-slate-400 pl-1">
@@ -447,7 +448,7 @@ export default function ParticipantDetailPage() {
                               ) : (
                                 <span className="inline-flex items-center gap-1 text-slate-400 bg-slate-100/60 px-2 py-0.5 rounded-md text-[11px]">
                                   <Gift className="w-3 h-3 text-slate-300" />
-                                  Pending
+                                  बाकी
                                 </span>
                               )}
                             </td>
@@ -458,7 +459,7 @@ export default function ParticipantDetailPage() {
                                 <div className="inline-flex flex-col gap-0.5">
                                   <span className="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md text-[11px] font-semibold">
                                     <UtensilsCrossed className="w-3 h-3 text-emerald-600" />
-                                    Claimed
+                                    वितरित
                                   </span>
                                   {d.food?.claimedAt && (
                                     <span className="text-[10px] text-slate-400 pl-1">
@@ -474,7 +475,7 @@ export default function ParticipantDetailPage() {
                               ) : (
                                 <span className="inline-flex items-center gap-1 text-slate-400 bg-slate-100/60 px-2 py-0.5 rounded-md text-[11px]">
                                   <UtensilsCrossed className="w-3 h-3 text-slate-300" />
-                                  Pending
+                                  बाकी
                                 </span>
                               )}
                             </td>
@@ -498,10 +499,10 @@ export default function ParticipantDetailPage() {
             {/* Danger Zone: Cancellation & Permanent Delete Card */}
             <div className="bg-white rounded-3xl shadow-xs border border-slate-200/80 p-6 sm:p-7">
               <h3 className="text-sm font-bold text-slate-900 mb-1">
-                Registration Management
+                पास व रजिस्ट्रेशन प्रबंधन
               </h3>
               <p className="text-xs text-slate-500 mb-4">
-                Deactivate or delete this participant registration.
+                इस प्रतिभागी का पास रद्द करें या रिकॉर्ड स्थायी रूप से हटाएं।
               </p>
 
               <div className="flex flex-wrap items-center gap-3">
@@ -512,7 +513,7 @@ export default function ParticipantDetailPage() {
                     className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-semibold transition-colors"
                   >
                     <ShieldCheck className="w-4 h-4" />
-                    <span>Reactivate Registration</span>
+                    <span>पास पुनः सक्रिय करें</span>
                   </button>
                 ) : (
                   <button
@@ -521,7 +522,7 @@ export default function ParticipantDetailPage() {
                     className="inline-flex items-center gap-2 border border-amber-300 hover:bg-amber-50 text-amber-800 px-4 py-2 rounded-xl text-xs font-semibold transition-colors"
                   >
                     <UserX className="w-4 h-4 text-amber-600" />
-                    <span>Cancel Registration</span>
+                    <span>पास रद्द करें</span>
                   </button>
                 )}
 
@@ -531,7 +532,7 @@ export default function ParticipantDetailPage() {
                   className="inline-flex items-center gap-2 border border-red-200 hover:bg-red-50 text-red-600 px-4 py-2 rounded-xl text-xs font-semibold transition-colors"
                 >
                   <Trash2 className="w-4 h-4" />
-                  <span>Delete Permanently</span>
+                  <span>स्थायी रूप से हटाएं</span>
                 </button>
               </div>
             </div>
@@ -541,12 +542,12 @@ export default function ParticipantDetailPage() {
           <div className="space-y-6">
             <div className="bg-white rounded-3xl shadow-xs border border-slate-200/80 p-6 sm:p-7 text-center">
               <h2 className="font-bold text-base text-slate-900 text-left mb-1">
-                Participant QR Code
+                प्रतिभागी QR पास
               </h2>
               <p className="text-xs text-slate-500 text-left mb-5">
                 {isCancelled
-                  ? 'QR code is currently DEACTIVATED due to registration cancellation.'
-                  : 'Scan-ready QR pass encoded with non-guessable random token.'}
+                  ? 'रजिस्ट्रेशन रद्द होने के कारण QR कोड निष्क्रिय है।'
+                  : 'स्कैन हेतु तैयार डिजिटल QR पास।'}
               </p>
 
               {qrLoading ? (
@@ -572,7 +573,7 @@ export default function ParticipantDetailPage() {
                     {isCancelled && (
                       <div className="absolute inset-0 flex items-center justify-center bg-red-900/40 backdrop-blur-xs rounded-2xl">
                         <span className="bg-red-600 text-white text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-md">
-                          Cancelled
+                          रद्द (Cancelled)
                         </span>
                       </div>
                     )}
@@ -585,7 +586,7 @@ export default function ParticipantDetailPage() {
                         className="w-full inline-flex items-center justify-center gap-2 bg-orange-600 hover:bg-orange-700 text-white py-2.5 rounded-xl font-semibold text-xs shadow-xs transition-colors"
                       >
                         <Printer className="w-4 h-4" />
-                        <span>Print ID Card</span>
+                        <span>आईडी कार्ड प्रिंट करें</span>
                       </Link>
 
                       <a
@@ -594,7 +595,7 @@ export default function ParticipantDetailPage() {
                         className="w-full inline-flex items-center justify-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 py-2.5 rounded-xl font-semibold text-xs shadow-xs transition-colors"
                       >
                         <Download className="w-4 h-4 text-slate-500" />
-                        <span>Download PNG</span>
+                        <span>QR इमेज डाउनलोड करें</span>
                       </a>
 
                       <button
@@ -602,17 +603,17 @@ export default function ParticipantDetailPage() {
                         className="w-full inline-flex items-center justify-center gap-2 border border-red-200 hover:bg-red-50 text-red-600 py-2.5 rounded-xl font-semibold text-xs transition-colors"
                       >
                         <RefreshCw className="w-3.5 h-3.5" />
-                        <span>Regenerate (If Lost)</span>
+                        <span>कार्ड खोने पर नया QR बनाएं</span>
                       </button>
                     </div>
                   ) : (
                     <div className="p-3 bg-red-50 rounded-xl border border-red-200 text-xs text-red-700 font-medium">
-                      Pass is deactivated. Reactivate registration above to allow printing and prop distribution.
+                      पास निष्क्रिय है। कार्ड प्रिंटिंग और सामग्री वितरण के लिए ऊपर दिए गए बटन से पास पुनः सक्रिय करें।
                     </div>
                   )}
 
                   <p className="text-[11px] text-slate-400 leading-relaxed text-left pt-2 border-t border-slate-100">
-                    Re-printing or downloading uses the same token. Regenerate creates a new token if the physical card was lost.
+                    पुनः प्रिंट या डाउनलोड करने पर वही टोकन रहता है। यदि कार्ड खो जाए तो ही नया QR बनाएं।
                   </p>
                 </div>
               ) : (
@@ -620,7 +621,7 @@ export default function ParticipantDetailPage() {
                   onClick={loadQR}
                   className="bg-orange-600 text-white px-4 py-2.5 rounded-xl text-xs font-semibold"
                 >
-                  Generate QR
+                  QR लोड करें
                 </button>
               )}
             </div>

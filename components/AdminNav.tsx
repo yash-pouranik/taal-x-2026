@@ -15,12 +15,12 @@ import {
 } from 'lucide-react'
 
 const navItems = [
-  { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/admin/participants', label: 'Participants', icon: Users },
-  { href: '/admin/scans', label: 'Daily Scans', icon: ScanLine },
-  { href: '/admin/staff', label: 'Staff', icon: UserCheck },
-  { href: '/admin/config', label: 'Event Dates', icon: CalendarRange },
-  { href: '/admin/reports', label: 'Reports', icon: FileSpreadsheet },
+  { href: '/admin/dashboard', label: 'डैशबोर्ड', icon: LayoutDashboard },
+  { href: '/admin/participants', label: 'प्रतिभागी', icon: Users },
+  { href: '/admin/scans', label: 'दैनिक स्कैन', icon: ScanLine },
+  { href: '/admin/staff', label: 'कार्यकर्ता', icon: UserCheck },
+  { href: '/admin/config', label: 'कार्यक्रम तिथियां', icon: CalendarRange },
+  { href: '/admin/reports', label: 'रिपोर्ट्स', icon: FileSpreadsheet },
 ]
 
 export default function AdminNav() {
@@ -43,14 +43,14 @@ export default function AdminNav() {
                 <span className="font-bold text-sm leading-tight tracking-tight text-gray-900">
                   Navratri 2026
                 </span>
-                <span className="text-[11px] font-medium text-orange-600 tracking-wider uppercase">
-                  Admin Portal
+                <span className="text-[11px] font-semibold text-orange-600 tracking-wider">
+                  प्रशासक पोर्टल
                 </span>
               </div>
             </Link>
 
             {/* Nav links */}
-            <div className="hidden md:flex items-center space-x-1.5 ml-4">
+            <div className="hidden md:flex items-center space-x-1 ml-4">
               {navItems.map((item) => {
                 const Icon = item.icon
                 const isActive =
@@ -62,7 +62,7 @@ export default function AdminNav() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-medium transition-all ${
+                    className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all ${
                       isActive
                         ? 'bg-orange-50 text-orange-700 font-semibold shadow-xs'
                         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/70'
@@ -84,10 +84,10 @@ export default function AdminNav() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => signOut({ callbackUrl: '/login' })}
-              className="flex items-center gap-2 text-xs font-semibold text-gray-600 hover:text-red-600 hover:bg-red-50/70 px-3 py-2 rounded-xl border border-gray-200 transition-colors"
+              className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 hover:text-red-600 hover:bg-red-50/70 px-3 py-2 rounded-xl border border-gray-200 transition-colors"
             >
               <LogOut className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Sign Out</span>
+              <span>लॉग आउट</span>
             </button>
           </div>
         </div>
