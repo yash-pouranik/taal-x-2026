@@ -15,6 +15,8 @@ import {
   UserCheck,
   RefreshCw,
   Loader2,
+  Gift,
+  UtensilsCrossed,
 } from 'lucide-react'
 
 type ScanState = 'scanning' | 'loading' | 'verify' | 'success' | 'error'
@@ -28,14 +30,33 @@ interface VerifyResult {
   }
   navratriDay: number
   distributionDate: string
-  alreadyClaimed: boolean
+  canClaimGift: boolean
+  canClaimFood: boolean
+  claim?: {
+    giftClaimed: boolean
+    giftClaimedAt?: string
+    giftStaffName?: string
+    foodClaimed: boolean
+    foodClaimedAt?: string
+    foodStaffName?: string
+  } | null
 }
 
 interface ErrorResult {
   error: string
   message: string
   participant?: { name: string; fatherName: string; participantId: string }
-  claim?: { navratriDay: number; claimedAt: string; claimedBy: string }
+  claim?: {
+    navratriDay: number
+    claimedAt?: string
+    claimedBy?: string
+    giftClaimed?: boolean
+    giftClaimedAt?: string
+    giftStaffName?: string
+    foodClaimed?: boolean
+    foodClaimedAt?: string
+    foodStaffName?: string
+  }
 }
 
 export default function ScannerPage() {
@@ -49,6 +70,7 @@ export default function ScannerPage() {
   const [successData, setSuccessData] = useState<{
     name: string
     navratriDay: number
+    itemLabel: string
     claimedAt: string
   } | null>(null)
   const [confirming, setConfirming] = useState(false)
@@ -157,14 +179,17 @@ export default function ScannerPage() {
     }
   }
 
-  async function confirmClaim() {
+  async function confirmClaim(itemType: 'gift' | 'food' | 'both') {
     if (!verifyData) return
     setConfirming(true)
     try {
       const res = await fetch('/api/claims/confirm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ participantId: verifyData.participant._id }),
+        body: JSON.stringify({
+          participantId: verifyData.participant._id,
+          itemType,
+        }),
       })
       const data = await res.json()
 
@@ -172,6 +197,7 @@ export default function ScannerPage() {
         setSuccessData({
           name: data.claim.participant.name,
           navratriDay: data.claim.navratriDay,
+          itemLabel: itemType === 'both' ? 'Gift & Food Packet' : itemType === 'gift' ? 'Gift / Prop' : 'Food Packet',
           claimedAt: data.claim.claimedAt,
         })
         setState('success')
@@ -304,44 +330,143 @@ export default function ScannerPage() {
                 </span>
               </div>
 
-              {/* Status Box */}
-              <div className="mt-6 p-4 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center justify-between">
-                <div>
-                  <span className="text-[11px] text-slate-400 uppercase tracking-wider block font-semibold">
-                    Festival Day
-                  </span>
-                  <span className="text-xl font-bold text-white">
-                    Day {verifyData.navratriDay}
-                  </span>
+              {/* Status Box: Gift & Food Status */}
+              <div className="mt-5 space-y-2.5">
+                <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400">
+                      <Gift className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-white block">Gift / Prop</span>
+                      <span className="text-[11px] text-slate-400">Navratri Day {verifyData.navratriDay}</span>
+                    </div>
+                  </div>
+                  <div>
+                    {verifyData.canClaimGift ? (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>Ready to Issue</span>
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-400 bg-slate-800/80 px-2.5 py-1 rounded-lg">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                        <span>Claimed</span>
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <div className="text-right">
-                  <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Not Collected</span>
-                  </span>
+
+                <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 rounded-xl bg-blue-500/10 text-blue-400">
+                      <UtensilsCrossed className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-white block">Food Packet</span>
+                      <span className="text-[11px] text-slate-400">Daily Prasadam / Meal</span>
+                    </div>
+                  </div>
+                  <div>
+                    {verifyData.canClaimFood ? (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2.5 py-1 rounded-lg">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>Ready to Issue</span>
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-400 bg-slate-800/80 px-2.5 py-1 rounded-lg">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-blue-500" />
+                        <span>Claimed</span>
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Confirmation CTA */}
             <div className="w-full space-y-3">
-              <button
-                onClick={confirmClaim}
-                disabled={confirming}
-                className="w-full bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:bg-emerald-900 text-white text-lg font-bold py-5 rounded-2xl shadow-xl shadow-emerald-600/20 transition-all flex items-center justify-center gap-2"
-              >
-                {confirming ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>Confirming...</span>
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="w-6 h-6" />
-                    <span>GIVE PROP</span>
-                  </>
-                )}
-              </button>
+              {verifyData.canClaimGift && verifyData.canClaimFood && (
+                <>
+                  <button
+                    onClick={() => confirmClaim('both')}
+                    disabled={confirming}
+                    className="w-full bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:from-emerald-500 hover:to-emerald-500 active:scale-[0.99] disabled:opacity-60 text-white text-base font-bold py-4 rounded-2xl shadow-xl shadow-emerald-950/40 transition-all flex items-center justify-center gap-2"
+                  >
+                    {confirming ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span>Distributing...</span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-5 h-5" />
+                        <span>GIVE BOTH (GIFT + FOOD)</span>
+                      </>
+                    )}
+                  </button>
+
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <button
+                      onClick={() => confirmClaim('gift')}
+                      disabled={confirming}
+                      className="w-full bg-slate-900 hover:bg-slate-800 border border-emerald-500/30 text-emerald-300 font-bold py-3 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors"
+                    >
+                      <Gift className="w-4 h-4 text-emerald-400" />
+                      <span>Gift Only</span>
+                    </button>
+
+                    <button
+                      onClick={() => confirmClaim('food')}
+                      disabled={confirming}
+                      className="w-full bg-slate-900 hover:bg-slate-800 border border-blue-500/30 text-blue-300 font-bold py-3 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors"
+                    >
+                      <UtensilsCrossed className="w-4 h-4 text-blue-400" />
+                      <span>Food Only</span>
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {verifyData.canClaimGift && !verifyData.canClaimFood && (
+                <button
+                  onClick={() => confirmClaim('gift')}
+                  disabled={confirming}
+                  className="w-full bg-emerald-600 hover:bg-emerald-500 active:scale-[0.99] disabled:opacity-60 text-white text-base font-bold py-4 rounded-2xl shadow-xl shadow-emerald-950/40 transition-all flex items-center justify-center gap-2"
+                >
+                  {confirming ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span>Distributing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Gift className="w-5 h-5" />
+                      <span>GIVE GIFT / PROP</span>
+                    </>
+                  )}
+                </button>
+              )}
+
+              {!verifyData.canClaimGift && verifyData.canClaimFood && (
+                <button
+                  onClick={() => confirmClaim('food')}
+                  disabled={confirming}
+                  className="w-full bg-blue-600 hover:bg-blue-500 active:scale-[0.99] disabled:opacity-60 text-white text-base font-bold py-4 rounded-2xl shadow-xl shadow-blue-950/40 transition-all flex items-center justify-center gap-2"
+                >
+                  {confirming ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span>Distributing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <UtensilsCrossed className="w-5 h-5" />
+                      <span>GIVE FOOD PACKET</span>
+                    </>
+                  )}
+                </button>
+              )}
 
               <button
                 onClick={reset}
@@ -368,7 +493,7 @@ export default function ScannerPage() {
                 {successData.name}
               </h2>
               <p className="text-emerald-400/90 text-sm font-semibold mt-1">
-                Day {successData.navratriDay} Prop Claimed
+                Day {successData.navratriDay} • {successData.itemLabel} Issued
               </p>
               <p className="text-[11px] text-slate-400 font-mono mt-3">
                 {successData.claimedAt}
@@ -431,9 +556,24 @@ export default function ScannerPage() {
               )}
 
               {errorData.claim && (
-                <div className="mt-3 text-[11px] text-amber-400/90 font-medium">
-                  Claimed at: {formatClaimTime(errorData.claim.claimedAt)}{' '}
-                  {errorData.claim.claimedBy && `by ${errorData.claim.claimedBy}`}
+                <div className="mt-3 p-3 bg-slate-950/80 rounded-xl border border-slate-800 text-left text-xs space-y-1.5">
+                  {errorData.claim.giftClaimed && (
+                    <div className="text-amber-300 flex items-center gap-1.5">
+                      <Gift className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                      <span>Gift claimed at {formatClaimTime(errorData.claim.giftClaimedAt || errorData.claim.claimedAt)} {errorData.claim.giftStaffName ? `by ${errorData.claim.giftStaffName}` : errorData.claim.claimedBy ? `by ${errorData.claim.claimedBy}` : ''}</span>
+                    </div>
+                  )}
+                  {errorData.claim.foodClaimed && (
+                    <div className="text-blue-300 flex items-center gap-1.5">
+                      <UtensilsCrossed className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                      <span>Food claimed at {formatClaimTime(errorData.claim.foodClaimedAt)} {errorData.claim.foodStaffName ? `by ${errorData.claim.foodStaffName}` : ''}</span>
+                    </div>
+                  )}
+                  {!errorData.claim.giftClaimed && !errorData.claim.foodClaimed && errorData.claim.claimedAt && (
+                    <div className="text-slate-400">
+                      Claimed at {formatClaimTime(errorData.claim.claimedAt)} {errorData.claim.claimedBy ? `by ${errorData.claim.claimedBy}` : ''}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

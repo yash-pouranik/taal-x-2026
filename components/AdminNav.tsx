@@ -11,11 +11,13 @@ import {
   FileSpreadsheet,
   LogOut,
   Flame,
+  ScanLine,
 } from 'lucide-react'
 
 const navItems = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/participants', label: 'Participants', icon: Users },
+  { href: '/admin/scans', label: 'Daily Scans', icon: ScanLine },
   { href: '/admin/staff', label: 'Staff', icon: UserCheck },
   { href: '/admin/config', label: 'Event Dates', icon: CalendarRange },
   { href: '/admin/reports', label: 'Reports', icon: FileSpreadsheet },

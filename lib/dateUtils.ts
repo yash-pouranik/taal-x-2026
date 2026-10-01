@@ -27,6 +27,8 @@ export function getCurrentIndiaDate(): string {
   return format(nowIST, 'yyyy-MM-dd', { timeZone: IST_TIMEZONE })
 }
 
+export const getTodayIST = getCurrentIndiaDate
+
 /**
  * Returns the current IST datetime as a formatted string for display.
  * e.g. "29 Sep 2026, 10:42 AM IST"

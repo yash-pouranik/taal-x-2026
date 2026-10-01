@@ -15,6 +15,10 @@ import {
 export default function ConfigPage() {
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
+  const [entryStartTime, setEntryStartTime] = useState('19:00')
+  const [entryEndTime, setEntryEndTime] = useState('21:30')
+  const [exitStartTime, setExitStartTime] = useState('22:00')
+  const [exitEndTime, setExitEndTime] = useState('00:30')
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(true)
   const [saved, setSaved] = useState(false)
@@ -25,8 +29,12 @@ export default function ConfigPage() {
       .then((r) => r.json())
       .then((d) => {
         if (d.config) {
-          setStartDate(d.config.startDate)
-          setEndDate(d.config.endDate)
+          setStartDate(d.config.startDate || '')
+          setEndDate(d.config.endDate || '')
+          setEntryStartTime(d.config.entryStartTime || '19:00')
+          setEntryEndTime(d.config.entryEndTime || '21:30')
+          setExitStartTime(d.config.exitStartTime || '22:00')
+          setExitEndTime(d.config.exitEndTime || '00:30')
         }
       })
       .finally(() => setFetching(false))
@@ -41,11 +49,18 @@ export default function ConfigPage() {
       const res = await fetch('/api/config', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ startDate, endDate }),
+        body: JSON.stringify({
+          startDate,
+          endDate,
+          entryStartTime,
+          entryEndTime,
+          exitStartTime,
+          exitEndTime,
+        }),
       })
       const data = await res.json()
       if (!res.ok) {
-        setError(data.error || 'Failed to update dates')
+        setError(data.error || 'Failed to update configuration')
         return
       }
       setSaved(true)
@@ -122,6 +137,74 @@ export default function ConfigPage() {
                       required
                       className="w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-slate-800"
                     />
+                  </div>
+                </div>
+              </div>
+
+              {/* Daily Operating Time Windows */}
+              <div className="pt-4 border-t border-slate-100 space-y-4">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-orange-600" />
+                  <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                    Daily Operational Time Windows (IST)
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  {/* Entry Window */}
+                  <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-200/70 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-700">Entry Time Window</span>
+                      <span className="text-[10px] font-semibold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">Arrival</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[11px] text-slate-500 mb-1">Start Time</label>
+                        <input
+                          type="time"
+                          value={entryStartTime}
+                          onChange={(e) => setEntryStartTime(e.target.value)}
+                          className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] text-slate-500 mb-1">End Time</label>
+                        <input
+                          type="time"
+                          value={entryEndTime}
+                          onChange={(e) => setEntryEndTime(e.target.value)}
+                          className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Exit Window */}
+                  <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-200/70 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-700">Exit Time Window</span>
+                      <span className="text-[10px] font-semibold bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">Departure</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[11px] text-slate-500 mb-1">Start Time</label>
+                        <input
+                          type="time"
+                          value={exitStartTime}
+                          onChange={(e) => setExitStartTime(e.target.value)}
+                          className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] text-slate-500 mb-1">End Time</label>
+                        <input
+                          type="time"
+                          value={exitEndTime}
+                          onChange={(e) => setExitEndTime(e.target.value)}
+                          className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

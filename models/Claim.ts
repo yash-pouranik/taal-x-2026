@@ -6,7 +6,16 @@ export interface IClaim extends Document {
   navratriDay: number            // 1–9
   claimedAt: Date                // UTC timestamp of the actual claim moment
   claimedByStaffId: Types.ObjectId
+  giftClaimed: boolean
+  giftClaimedAt?: Date
+  giftStaffId?: Types.ObjectId
+  foodClaimed: boolean
+  foodClaimedAt?: Date
+  foodStaffId?: Types.ObjectId
+  entryTime?: Date
+  exitTime?: Date
   createdAt: Date
+  updatedAt: Date
 }
 
 const ClaimSchema = new Schema<IClaim>(
@@ -36,6 +45,34 @@ const ClaimSchema = new Schema<IClaim>(
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
+    },
+    giftClaimed: {
+      type: Boolean,
+      default: false,
+    },
+    giftClaimedAt: {
+      type: Date,
+    },
+    giftStaffId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+    },
+    foodClaimed: {
+      type: Boolean,
+      default: false,
+    },
+    foodClaimedAt: {
+      type: Date,
+    },
+    foodStaffId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+    },
+    entryTime: {
+      type: Date,
+    },
+    exitTime: {
+      type: Date,
     },
   },
   { timestamps: true }

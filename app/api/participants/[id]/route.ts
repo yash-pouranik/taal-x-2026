@@ -24,27 +24,62 @@ export async function GET(
 
   const claims = await Claim.find({ participantId: participant._id })
     .populate('claimedByStaffId', 'name email')
+    .populate('giftStaffId', 'name email')
+    .populate('foodStaffId', 'name email')
     .sort({ distributionDate: 1 })
 
   // Build 9-day grid if config exists
   const config = await EventConfig.findOne()
-  const dayGrid: { day: number; date: string; claimed: boolean; claimInfo?: object }[] = []
+  let dayGrid: {
+    day: number
+    date: string
+    claimed: boolean
+    entryWindow: { start: string; end: string }
+    exitWindow: { start: string; end: string }
+    gift: { claimed: boolean; claimedAt?: Date; staffName?: string }
+    food: { claimed: boolean; claimedAt?: Date; staffName?: string }
+    claimInfo?: object
+  }[] = []
+
   if (config) {
     for (let i = 0; i < 9; i++) {
       const d = new Date(config.startDate)
       d.setDate(d.getDate() + i)
       const dateStr = d.toISOString().split('T')[0]
       const claim = claims.find(c => c.distributionDate === dateStr)
+      const giftClaimed = claim ? (claim.giftClaimed ?? true) : false
+      const foodClaimed = claim ? (claim.foodClaimed ?? false) : false
+      const giftStaff = (claim?.giftStaffId as { name?: string })?.name || (claim?.claimedByStaffId as { name?: string })?.name
+      const foodStaff = (claim?.foodStaffId as { name?: string })?.name
+
       dayGrid.push({
         day: i + 1,
         date: dateStr,
         claimed: !!claim,
+        entryWindow: {
+          start: config.entryStartTime || '19:00',
+          end: config.entryEndTime || '21:30',
+        },
+        exitWindow: {
+          start: config.exitStartTime || '22:00',
+          end: config.exitEndTime || '00:30',
+        },
+        gift: {
+          claimed: giftClaimed,
+          claimedAt: claim?.giftClaimedAt || (giftClaimed ? claim?.claimedAt : undefined),
+          staffName: giftClaimed ? giftStaff : undefined,
+        },
+        food: {
+          claimed: foodClaimed,
+          claimedAt: claim?.foodClaimedAt,
+          staffName: foodClaimed ? foodStaff : undefined,
+        },
         claimInfo: claim ? claim.toObject() : undefined,
       })
     }
   }
 
-  return NextResponse.json({ participant, claims, dayGrid })
+  return NextResponse.json({ participant, claims, dayGrid, config })
 }
 
 export async function PUT(

@@ -18,12 +18,28 @@ import {
   UserX,
   Trash2,
   ShieldCheck,
+  Gift,
+  UtensilsCrossed,
+  LogIn,
+  LogOut as ExitIcon,
 } from 'lucide-react'
 
 interface DayGrid {
   day: number
   date: string
   claimed: boolean
+  entryWindow?: { start: string; end: string }
+  exitWindow?: { start: string; end: string }
+  gift?: {
+    claimed: boolean
+    claimedAt?: string
+    staffName?: string
+  }
+  food?: {
+    claimed: boolean
+    claimedAt?: string
+    staffName?: string
+  }
   claimInfo?: {
     claimedAt: string
     navratriDay: number
@@ -347,20 +363,20 @@ export default function ParticipantDetailPage() {
 
             {/* 9-Day Distribution Matrix */}
             <div className="bg-white rounded-3xl shadow-xs border border-slate-200/80 p-6 sm:p-7">
-              <div className="flex items-center justify-between mb-5 pb-3 border-b border-slate-100">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-3 border-b border-slate-100">
                 <div>
                   <h2 className="font-bold text-base text-slate-900">
-                    9-Day Claim History
+                    9-Day Distribution & Attendance Matrix
                   </h2>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Live verification audit per Navratri festival day.
+                    Separate tracking for Prop/Gift, Food Packet, and Entry/Exit operational windows.
                   </p>
                 </div>
                 <div className="flex items-center gap-3 text-xs font-semibold">
-                  <span className="flex items-center gap-1 text-emerald-600">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Collected
+                  <span className="flex items-center gap-1.5 text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Claimed
                   </span>
-                  <span className="flex items-center gap-1 text-slate-400">
+                  <span className="flex items-center gap-1.5 text-slate-500 bg-slate-50 px-2.5 py-1 rounded-full border border-slate-200">
                     <XCircle className="w-3.5 h-3.5" /> Pending
                   </span>
                 </div>
@@ -368,47 +384,113 @@ export default function ParticipantDetailPage() {
 
               {dayGrid.length === 0 ? (
                 <div className="text-center py-8 text-slate-400 text-xs">
-                  Event dates not configured yet. Configure dates to view matrix.
+                  Event dates not configured yet. Configure dates in Settings to view matrix.
                 </div>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {dayGrid.map((d) => (
-                    <div
-                      key={d.day}
-                      className={`rounded-2xl p-4 transition-all border ${
-                        d.claimed
-                          ? 'bg-emerald-50/70 border-emerald-200/80 shadow-xs'
-                          : 'bg-slate-50/50 border-slate-200/60'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-xs font-bold text-slate-700">
-                          Day {d.day}
-                        </span>
-                        {d.claimed ? (
-                          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                        ) : (
-                          <XCircle className="w-4 h-4 text-slate-300" />
-                        )}
-                      </div>
-                      <div className="text-[11px] text-slate-400 font-mono">
-                        {d.date}
-                      </div>
+                <div className="overflow-x-auto -mx-6 sm:mx-0">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-200 bg-slate-50/70 text-slate-500 uppercase tracking-wider text-[10px] font-semibold">
+                        <th className="py-3 px-4 rounded-l-xl">Day & Date</th>
+                        <th className="py-3 px-3">Entry Window</th>
+                        <th className="py-3 px-3">Gift / Prop</th>
+                        <th className="py-3 px-3">Food Packet</th>
+                        <th className="py-3 px-4 rounded-r-xl">Exit Window</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 font-medium">
+                      {dayGrid.map((d) => {
+                        const isGiftClaimed = d.gift?.claimed ?? d.claimed
+                        const isFoodClaimed = d.food?.claimed ?? false
 
-                      {d.claimed && d.claimInfo && (
-                        <div className="mt-2.5 pt-2 border-t border-emerald-200/50 text-[11px] text-emerald-700 flex items-center gap-1">
-                          <Clock className="w-3 h-3 text-emerald-600 shrink-0" />
-                          <span>
-                            {new Date(d.claimInfo.claimedAt).toLocaleTimeString('en-IN', {
-                              timeZone: 'Asia/Kolkata',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                        return (
+                          <tr key={d.day} className="hover:bg-slate-50/50 transition-colors">
+                            {/* Day & Date */}
+                            <td className="py-3.5 px-4 whitespace-nowrap">
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-slate-900 bg-orange-100/70 text-orange-800 text-[11px] px-2 py-0.5 rounded-md">
+                                  Day {d.day}
+                                </span>
+                                <span className="text-slate-600 text-xs font-mono">
+                                  {d.date}
+                                </span>
+                              </div>
+                            </td>
+
+                            {/* Entry Window */}
+                            <td className="py-3.5 px-3 whitespace-nowrap">
+                              <span className="inline-flex items-center gap-1.5 text-slate-700 bg-emerald-50/70 border border-emerald-200/50 px-2 py-1 rounded-lg text-[11px]">
+                                <LogIn className="w-3 h-3 text-emerald-600 shrink-0" />
+                                <span>{d.entryWindow ? `${d.entryWindow.start} - ${d.entryWindow.end}` : '19:00 - 21:30'}</span>
+                              </span>
+                            </td>
+
+                            {/* Gift / Prop Status */}
+                            <td className="py-3.5 px-3 whitespace-nowrap">
+                              {isGiftClaimed ? (
+                                <div className="inline-flex flex-col gap-0.5">
+                                  <span className="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md text-[11px] font-semibold">
+                                    <Gift className="w-3 h-3 text-emerald-600" />
+                                    Claimed
+                                  </span>
+                                  {(d.gift?.claimedAt || d.claimInfo?.claimedAt) && (
+                                    <span className="text-[10px] text-slate-400 pl-1">
+                                      {new Date(d.gift?.claimedAt || d.claimInfo!.claimedAt).toLocaleTimeString('en-IN', {
+                                        timeZone: 'Asia/Kolkata',
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                      })}
+                                      {d.gift?.staffName ? ` (${d.gift.staffName})` : ''}
+                                    </span>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 text-slate-400 bg-slate-100/60 px-2 py-0.5 rounded-md text-[11px]">
+                                  <Gift className="w-3 h-3 text-slate-300" />
+                                  Pending
+                                </span>
+                              )}
+                            </td>
+
+                            {/* Food Packet Status */}
+                            <td className="py-3.5 px-3 whitespace-nowrap">
+                              {isFoodClaimed ? (
+                                <div className="inline-flex flex-col gap-0.5">
+                                  <span className="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md text-[11px] font-semibold">
+                                    <UtensilsCrossed className="w-3 h-3 text-emerald-600" />
+                                    Claimed
+                                  </span>
+                                  {d.food?.claimedAt && (
+                                    <span className="text-[10px] text-slate-400 pl-1">
+                                      {new Date(d.food.claimedAt).toLocaleTimeString('en-IN', {
+                                        timeZone: 'Asia/Kolkata',
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                      })}
+                                      {d.food?.staffName ? ` (${d.food.staffName})` : ''}
+                                    </span>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 text-slate-400 bg-slate-100/60 px-2 py-0.5 rounded-md text-[11px]">
+                                  <UtensilsCrossed className="w-3 h-3 text-slate-300" />
+                                  Pending
+                                </span>
+                              )}
+                            </td>
+
+                            {/* Exit Window */}
+                            <td className="py-3.5 px-4 whitespace-nowrap">
+                              <span className="inline-flex items-center gap-1.5 text-slate-700 bg-blue-50/70 border border-blue-200/50 px-2 py-1 rounded-lg text-[11px]">
+                                <ExitIcon className="w-3 h-3 text-blue-600 shrink-0" />
+                                <span>{d.exitWindow ? `${d.exitWindow.start} - ${d.exitWindow.end}` : '22:00 - 00:30'}</span>
+                              </span>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </div>

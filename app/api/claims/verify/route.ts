@@ -70,23 +70,33 @@ export async function POST(req: NextRequest) {
   const existingClaim = await Claim.findOne({
     participantId: participant._id,
     distributionDate: todayDate,
-  }).populate('claimedByStaffId', 'name')
+  })
+    .populate('claimedByStaffId', 'name')
+    .populate('giftStaffId', 'name')
+    .populate('foodStaffId', 'name')
 
-  if (existingClaim) {
+  const isGiftClaimed = existingClaim ? (existingClaim.giftClaimed ?? true) : false
+  const isFoodClaimed = existingClaim ? (existingClaim.foodClaimed ?? false) : false
+
+  if (existingClaim && isGiftClaimed && isFoodClaimed) {
     return NextResponse.json({
       valid: false,
       error: 'ALREADY_CLAIMED',
-      message: 'This participant has already collected today\'s prop.',
+      message: 'This participant has already collected both Gift and Food Packet for today.',
       participant: { name: participant.name, fatherName: participant.fatherName, participantId: participant.participantId },
       claim: {
         navratriDay: existingClaim.navratriDay,
-        claimedAt: existingClaim.claimedAt,
-        claimedBy: (existingClaim.claimedByStaffId as { name?: string })?.name,
+        giftClaimed: true,
+        giftClaimedAt: existingClaim.giftClaimedAt || existingClaim.claimedAt,
+        giftStaffName: (existingClaim.giftStaffId as { name?: string })?.name || (existingClaim.claimedByStaffId as { name?: string })?.name,
+        foodClaimed: true,
+        foodClaimedAt: existingClaim.foodClaimedAt,
+        foodStaffName: (existingClaim.foodStaffId as { name?: string })?.name,
       },
     }, { status: 409 })
   }
 
-  // Step 4: Return verification info (claim NOT created yet)
+  // Step 4: Return verification info (items can be claimed)
   return NextResponse.json({
     valid: true,
     participant: {
@@ -97,6 +107,15 @@ export async function POST(req: NextRequest) {
     },
     navratriDay: day,
     distributionDate: todayDate,
-    alreadyClaimed: false,
+    canClaimGift: !isGiftClaimed,
+    canClaimFood: !isFoodClaimed,
+    claim: existingClaim ? {
+      giftClaimed: isGiftClaimed,
+      giftClaimedAt: existingClaim.giftClaimedAt || existingClaim.claimedAt,
+      giftStaffName: (existingClaim.giftStaffId as { name?: string })?.name || (existingClaim.claimedByStaffId as { name?: string })?.name,
+      foodClaimed: isFoodClaimed,
+      foodClaimedAt: existingClaim.foodClaimedAt,
+      foodStaffName: (existingClaim.foodStaffId as { name?: string })?.name,
+    } : null,
   })
 }

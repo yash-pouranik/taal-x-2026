@@ -21,7 +21,7 @@ export async function PUT(req: NextRequest) {
 
   await connectDB()
   const body = await req.json()
-  const { startDate, endDate } = body
+  const { startDate, endDate, entryStartTime, entryEndTime, exitStartTime, exitEndTime } = body
 
   if (!startDate || !endDate) {
     return NextResponse.json({ error: 'startDate and endDate are required' }, { status: 400 })
@@ -37,6 +37,10 @@ export async function PUT(req: NextRequest) {
       startDate,
       endDate,
       timezone: 'Asia/Kolkata',
+      entryStartTime: entryStartTime || '19:00',
+      entryEndTime: entryEndTime || '21:30',
+      exitStartTime: exitStartTime || '22:00',
+      exitEndTime: exitEndTime || '00:30',
       updatedByAdminId: session.user.id,
     },
     { upsert: true, new: true }
