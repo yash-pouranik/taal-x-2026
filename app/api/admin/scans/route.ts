@@ -58,6 +58,8 @@ export async function GET(req: NextRequest) {
 
   let giftDistributed = 0
   let foodDistributed = 0
+  let currentlyInside = 0
+  let exitedCount = 0
 
   const scans = claims.map(c => {
     const p = c.participantId as unknown as {
@@ -68,15 +70,40 @@ export async function GET(req: NextRequest) {
       status: string
     } | null
 
-    const isGift = c.giftClaimed ?? true
-    const isFood = c.foodClaimed ?? false
+    const isGift = !!c.giftClaimed
+    const isFood = !!c.foodClaimed
+    const hasEntered = !!c.entryTime
+    const hasExited = !!c.exitTime
+    const isInside = hasEntered && !hasExited
 
     if (isGift) giftDistributed++
     if (isFood) foodDistributed++
+    if (isInside) currentlyInside++
+    if (hasExited) exitedCount++
 
     const fallbackStaff = (c.claimedByStaffId as unknown as { name?: string })?.name || 'Staff'
     const giftStaff = (c.giftStaffId as unknown as { name?: string })?.name || fallbackStaff
     const foodStaff = (c.foodStaffId as unknown as { name?: string })?.name || fallbackStaff
+
+    // Calculate time duration
+    let timeSpent = ''
+    if (hasEntered) {
+      const now = new Date()
+      const end = hasExited ? c.exitTime : now
+      const startMs = new Date(c.entryTime!).getTime()
+      const endMs = new Date(end!).getTime()
+      const diffMins = Math.max(0, Math.floor((endMs - startMs) / 60000))
+      const hours = Math.floor(diffMins / 60)
+      const mins = diffMins % 60
+
+      if (hours === 0) {
+        timeSpent = `${mins} मिनट`
+      } else if (mins === 0) {
+        timeSpent = `${hours} घंटे`
+      } else {
+        timeSpent = `${hours} घंटे ${mins} मिनट`
+      }
+    }
 
     return {
       _id: c._id.toString(),
@@ -88,12 +115,18 @@ export async function GET(req: NextRequest) {
         status: p.status,
       } : {
         participantId: 'UNKNOWN',
-        name: 'Deleted Participant',
+        name: 'हटाया गया प्रतिभागी',
         fatherName: '-',
         status: 'cancelled',
       },
       navratriDay: c.navratriDay,
       distributionDate: c.distributionDate,
+      hasEntered,
+      hasExited,
+      isInside,
+      entryTime: c.entryTime,
+      exitTime: c.exitTime,
+      timeSpent,
       giftClaimed: isGift,
       giftClaimedAt: c.giftClaimedAt || (isGift ? c.claimedAt : undefined),
       giftStaffName: isGift ? giftStaff : undefined,
@@ -124,6 +157,8 @@ export async function GET(req: NextRequest) {
     summary: {
       totalParticipants,
       turnout,
+      currentlyInside,
+      exitedCount,
       giftDistributed,
       foodDistributed,
       pendingTurnout,

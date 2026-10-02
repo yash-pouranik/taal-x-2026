@@ -5,6 +5,7 @@ import { connectDB } from '@/lib/db'
 import Participant from '@/models/Participant'
 import Claim from '@/models/Claim'
 import EventConfig from '@/models/EventConfig'
+import { formatDurationHindi } from '@/lib/dateUtils'
 
 export async function GET(
   req: NextRequest,
@@ -36,6 +37,12 @@ export async function GET(
     claimed: boolean
     entryWindow: { start: string; end: string }
     exitWindow: { start: string; end: string }
+    entryTime?: Date
+    exitTime?: Date
+    hasEntered: boolean
+    hasExited: boolean
+    isCurrentlyInside: boolean
+    durationSpent?: string
     gift: { claimed: boolean; claimedAt?: Date; staffName?: string }
     food: { claimed: boolean; claimedAt?: Date; staffName?: string }
     claimInfo?: object
@@ -52,10 +59,19 @@ export async function GET(
       const giftStaff = (claim?.giftStaffId as { name?: string })?.name || (claim?.claimedByStaffId as { name?: string })?.name
       const foodStaff = (claim?.foodStaffId as { name?: string })?.name
 
+      const hasEntered = !!claim?.entryTime
+      const hasExited = !!claim?.exitTime
+
       dayGrid.push({
         day: i + 1,
         date: dateStr,
         claimed: !!claim,
+        entryTime: claim?.entryTime,
+        exitTime: claim?.exitTime,
+        hasEntered,
+        hasExited,
+        isCurrentlyInside: hasEntered && !hasExited,
+        durationSpent: claim?.entryTime ? formatDurationHindi(claim.entryTime, claim?.exitTime) : undefined,
         entryWindow: {
           start: config.entryStartTime || '19:00',
           end: config.entryEndTime || '21:30',

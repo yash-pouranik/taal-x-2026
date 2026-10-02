@@ -30,6 +30,12 @@ interface DayGrid {
   claimed: boolean
   entryWindow?: { start: string; end: string }
   exitWindow?: { start: string; end: string }
+  entryTime?: string
+  exitTime?: string
+  hasEntered?: boolean
+  hasExited?: boolean
+  isCurrentlyInside?: boolean
+  durationSpent?: string
   gift?: {
     claimed: boolean
     claimedAt?: string
@@ -393,10 +399,10 @@ export default function ParticipantDetailPage() {
                     <thead>
                       <tr className="border-b border-slate-200 bg-slate-50/70 text-slate-500 uppercase tracking-wider text-[10px] font-semibold">
                         <th className="py-3 px-4 rounded-l-xl">दिन व तारीख</th>
-                        <th className="py-3 px-3">प्रवेश समय (Entry)</th>
+                        <th className="py-3 px-3">प्रवेश (Entry)</th>
                         <th className="py-3 px-3">उपहार / प्रॉप (Gift)</th>
-                        <th className="py-3 px-3">भोजन पैकेट (Food)</th>
-                        <th className="py-3 px-4 rounded-r-xl">प्रस्थान समय (Exit)</th>
+                        <th className="py-3 px-3">भोजन पैकेट (Bhojan)</th>
+                        <th className="py-3 px-4 rounded-r-xl">प्रस्थान (Exit) व अवधि</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 font-medium">
@@ -418,12 +424,35 @@ export default function ParticipantDetailPage() {
                               </div>
                             </td>
 
-                            {/* Entry Window */}
+                            {/* Entry Window & Actual Entry */}
                             <td className="py-3.5 px-3 whitespace-nowrap">
-                              <span className="inline-flex items-center gap-1.5 text-slate-700 bg-emerald-50/70 border border-emerald-200/50 px-2 py-1 rounded-lg text-[11px]">
-                                <LogIn className="w-3 h-3 text-emerald-600 shrink-0" />
-                                <span>{d.entryWindow ? `${d.entryWindow.start} - ${d.entryWindow.end}` : '19:00 - 21:30'}</span>
-                              </span>
+                              {d.hasEntered || d.entryTime ? (
+                                <div className="inline-flex flex-col gap-0.5">
+                                  <span className="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md text-[11px] font-semibold">
+                                    <LogIn className="w-3 h-3 text-emerald-600" />
+                                    प्रवेश दर्ज
+                                  </span>
+                                  <span className="text-[10px] text-slate-500 pl-1 font-mono">
+                                    {new Date(d.entryTime!).toLocaleTimeString('en-IN', {
+                                      timeZone: 'Asia/Kolkata',
+                                      hour: '2-digit',
+                                      minute: '2-digit',
+                                    })}
+                                  </span>
+                                  {d.isCurrentlyInside && (
+                                    <span className="text-[10px] text-emerald-600 font-semibold pl-1">
+                                      🟢 अभी अंदर हैं ({d.durationSpent || '0 मिनट'} से)
+                                    </span>
+                                  )}
+                                </div>
+                              ) : (
+                                <div className="inline-flex flex-col gap-0.5">
+                                  <span className="inline-flex items-center gap-1.5 text-slate-500 bg-slate-100/60 px-2 py-0.5 rounded-md text-[11px]">
+                                    <LogIn className="w-3 h-3 text-slate-400" />
+                                    <span>विंडो: {d.entryWindow ? `${d.entryWindow.start} - ${d.entryWindow.end}` : '19:00 - 21:30'}</span>
+                                  </span>
+                                </div>
+                              )}
                             </td>
 
                             {/* Gift / Prop Status */}
@@ -435,7 +464,7 @@ export default function ParticipantDetailPage() {
                                     वितरित
                                   </span>
                                   {(d.gift?.claimedAt || d.claimInfo?.claimedAt) && (
-                                    <span className="text-[10px] text-slate-400 pl-1">
+                                    <span className="text-[10px] text-slate-400 pl-1 font-mono">
                                       {new Date(d.gift?.claimedAt || d.claimInfo!.claimedAt).toLocaleTimeString('en-IN', {
                                         timeZone: 'Asia/Kolkata',
                                         hour: '2-digit',
@@ -453,7 +482,7 @@ export default function ParticipantDetailPage() {
                               )}
                             </td>
 
-                            {/* Food Packet Status */}
+                            {/* Food Packet (Bhojan) Status */}
                             <td className="py-3.5 px-3 whitespace-nowrap">
                               {isFoodClaimed ? (
                                 <div className="inline-flex flex-col gap-0.5">
@@ -462,7 +491,7 @@ export default function ParticipantDetailPage() {
                                     वितरित
                                   </span>
                                   {d.food?.claimedAt && (
-                                    <span className="text-[10px] text-slate-400 pl-1">
+                                    <span className="text-[10px] text-slate-400 pl-1 font-mono">
                                       {new Date(d.food.claimedAt).toLocaleTimeString('en-IN', {
                                         timeZone: 'Asia/Kolkata',
                                         hour: '2-digit',
@@ -480,12 +509,45 @@ export default function ParticipantDetailPage() {
                               )}
                             </td>
 
-                            {/* Exit Window */}
+                            {/* Exit Window & Actual Exit / Duration */}
                             <td className="py-3.5 px-4 whitespace-nowrap">
-                              <span className="inline-flex items-center gap-1.5 text-slate-700 bg-blue-50/70 border border-blue-200/50 px-2 py-1 rounded-lg text-[11px]">
-                                <ExitIcon className="w-3 h-3 text-blue-600 shrink-0" />
-                                <span>{d.exitWindow ? `${d.exitWindow.start} - ${d.exitWindow.end}` : '22:00 - 00:30'}</span>
-                              </span>
+                              {d.hasExited || d.exitTime ? (
+                                <div className="inline-flex flex-col gap-0.5">
+                                  <span className="inline-flex items-center gap-1 text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-md text-[11px] font-semibold">
+                                    <ExitIcon className="w-3 h-3 text-blue-600" />
+                                    प्रस्थान दर्ज
+                                  </span>
+                                  <span className="text-[10px] text-slate-500 pl-1 font-mono">
+                                    {new Date(d.exitTime!).toLocaleTimeString('en-IN', {
+                                      timeZone: 'Asia/Kolkata',
+                                      hour: '2-digit',
+                                      minute: '2-digit',
+                                    })}
+                                  </span>
+                                  {d.durationSpent && (
+                                    <span className="text-[10px] text-slate-600 pl-1 font-medium">
+                                      कुल समय: {d.durationSpent}
+                                    </span>
+                                  )}
+                                </div>
+                              ) : d.isCurrentlyInside ? (
+                                <div className="inline-flex flex-col gap-0.5">
+                                  <span className="inline-flex items-center gap-1 text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md text-[11px] font-semibold">
+                                    <Clock className="w-3 h-3 text-amber-600" />
+                                    अभी अंदर हैं
+                                  </span>
+                                  <span className="text-[10px] text-slate-400 pl-1">
+                                    प्रस्थान दर्ज नहीं हुआ
+                                  </span>
+                                </div>
+                              ) : (
+                                <div className="inline-flex flex-col gap-0.5">
+                                  <span className="inline-flex items-center gap-1.5 text-slate-500 bg-slate-100/60 px-2 py-0.5 rounded-md text-[11px]">
+                                    <ExitIcon className="w-3 h-3 text-slate-400" />
+                                    <span>विंडो: {d.exitWindow ? `${d.exitWindow.start} - ${d.exitWindow.end}` : '22:00 - 00:30'}</span>
+                                  </span>
+                                </div>
+                              )}
                             </td>
                           </tr>
                         )

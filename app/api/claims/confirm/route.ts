@@ -60,79 +60,141 @@ export async function POST(req: NextRequest) {
       distributionDate: todayDate,
     })
 
-    if (claim) {
-      // Existing claim: update specific item(s)
-      if (itemType === 'gift') {
-        if (claim.giftClaimed) {
-          return NextResponse.json({
-            error: 'ALREADY_CLAIMED',
-            message: 'Gift / Prop has already been claimed for today.',
-          }, { status: 409 })
-        }
+    if (itemType === 'entry') {
+      if (claim && claim.entryTime) {
+        return NextResponse.json({
+          error: 'ALREADY_ENTERED',
+          message: 'इस प्रतिभागी का प्रवेश पहले ही दर्ज हो चुका है।',
+        }, { status: 409 })
+      }
+
+      if (claim) {
+        claim.entryTime = claimedAt
+        await claim.save()
+      } else {
+        claim = new Claim({
+          participantId: participant._id,
+          distributionDate: todayDate,
+          navratriDay: day,
+          claimedAt,
+          claimedByStaffId: staffObjectId,
+          entryTime: claimedAt,
+          giftClaimed: false,
+          foodClaimed: false,
+        })
+        await claim.save()
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: 'प्रवेश (Entry) सफलतापूर्वक दर्ज किया गया।',
+        claim: {
+          participant: { name: participant.name, fatherName: participant.fatherName, participantId: participant.participantId },
+          navratriDay: day,
+          distributionDate: todayDate,
+          itemType: 'entry',
+          itemLabel: 'प्रवेश (Entry In)',
+          entryTime: toISTString(claimedAt),
+          claimedAt: toISTString(claimedAt),
+        },
+      }, { status: 201 })
+    }
+
+    if (itemType === 'exit') {
+      if (!claim || !claim.entryTime) {
+        return NextResponse.json({
+          error: 'ENTRY_REQUIRED',
+          message: 'प्रस्थान दर्ज करने से पहले प्रवेश दर्ज होना आवश्यक है।',
+        }, { status: 400 })
+      }
+
+      if (claim.exitTime) {
+        return NextResponse.json({
+          error: 'ALREADY_EXITED',
+          message: 'इस प्रतिभागी का प्रस्थान पहले ही दर्ज हो चुका है।',
+        }, { status: 409 })
+      }
+
+      claim.exitTime = claimedAt
+      await claim.save()
+
+      return NextResponse.json({
+        success: true,
+        message: 'प्रस्थान (Exit) सफलतापूर्वक दर्ज किया गया।',
+        claim: {
+          participant: { name: participant.name, fatherName: participant.fatherName, participantId: participant.participantId },
+          navratriDay: day,
+          distributionDate: todayDate,
+          itemType: 'exit',
+          itemLabel: 'प्रस्थान (Exit Out)',
+          exitTime: toISTString(claimedAt),
+          claimedAt: toISTString(claimedAt),
+        },
+      }, { status: 200 })
+    }
+
+    // Gift, Food or Both require entry to have been done first!
+    if (!claim || !claim.entryTime) {
+      return NextResponse.json({
+        error: 'ENTRY_REQUIRED',
+        message: 'कृपया पहले प्रवेश (Entry) दर्ज करें। बिना प्रवेश के उपहार या भोजन नहीं दिया जा सकता।',
+      }, { status: 400 })
+    }
+
+    // Existing claim: update specific item(s)
+    if (itemType === 'gift') {
+      if (claim.giftClaimed) {
+        return NextResponse.json({
+          error: 'ALREADY_CLAIMED',
+          message: 'उपहार / प्रॉप पहले ही दिया जा चुका है।',
+        }, { status: 409 })
+      }
+      claim.giftClaimed = true
+      claim.giftClaimedAt = claimedAt
+      claim.giftStaffId = staffObjectId
+    } else if (itemType === 'food') {
+      if (claim.foodClaimed) {
+        return NextResponse.json({
+          error: 'ALREADY_CLAIMED',
+          message: 'भोजन पैकेट पहले ही दिया जा चुका है।',
+        }, { status: 409 })
+      }
+      claim.foodClaimed = true
+      claim.foodClaimedAt = claimedAt
+      claim.foodStaffId = staffObjectId
+    } else {
+      // 'both'
+      if (claim.giftClaimed && claim.foodClaimed) {
+        return NextResponse.json({
+          error: 'ALREADY_CLAIMED',
+          message: 'उपहार और भोजन पैकेट दोनों पहले ही दिए जा चुके हैं।',
+        }, { status: 409 })
+      }
+      if (!claim.giftClaimed) {
         claim.giftClaimed = true
         claim.giftClaimedAt = claimedAt
         claim.giftStaffId = staffObjectId
-      } else if (itemType === 'food') {
-        if (claim.foodClaimed) {
-          return NextResponse.json({
-            error: 'ALREADY_CLAIMED',
-            message: 'Food Packet has already been claimed for today.',
-          }, { status: 409 })
-        }
+      }
+      if (!claim.foodClaimed) {
         claim.foodClaimed = true
         claim.foodClaimedAt = claimedAt
         claim.foodStaffId = staffObjectId
-      } else {
-        // 'both'
-        if (claim.giftClaimed && claim.foodClaimed) {
-          return NextResponse.json({
-            error: 'ALREADY_CLAIMED',
-            message: 'Both Gift and Food Packet have already been claimed for today.',
-          }, { status: 409 })
-        }
-        if (!claim.giftClaimed) {
-          claim.giftClaimed = true
-          claim.giftClaimedAt = claimedAt
-          claim.giftStaffId = staffObjectId
-        }
-        if (!claim.foodClaimed) {
-          claim.foodClaimed = true
-          claim.foodClaimedAt = claimedAt
-          claim.foodStaffId = staffObjectId
-        }
       }
-
-      await claim.save()
-    } else {
-      // New claim
-      const claimGift = itemType === 'gift' || itemType === 'both'
-      const claimFood = itemType === 'food' || itemType === 'both'
-
-      claim = new Claim({
-        participantId: participant._id,
-        distributionDate: todayDate,
-        navratriDay: day,
-        claimedAt,
-        claimedByStaffId: staffObjectId,
-        giftClaimed: claimGift,
-        giftClaimedAt: claimGift ? claimedAt : undefined,
-        giftStaffId: claimGift ? staffObjectId : undefined,
-        foodClaimed: claimFood,
-        foodClaimedAt: claimFood ? claimedAt : undefined,
-        foodStaffId: claimFood ? staffObjectId : undefined,
-      })
-      await claim.save()
     }
 
-    const itemLabel = itemType === 'both' ? 'Gift & Food Packet' : itemType === 'gift' ? 'Gift / Prop' : 'Food Packet'
+    await claim.save()
+
+    const itemLabel = itemType === 'both' ? 'उपहार व भोजन पैकेट' : itemType === 'gift' ? 'उपहार / प्रॉप' : 'भोजन पैकेट'
 
     return NextResponse.json({
       success: true,
-      message: `${itemLabel} distributed successfully.`,
+      message: `${itemLabel} सफलतापूर्वक वितरित किया गया।`,
       claim: {
         participant: { name: participant.name, fatherName: participant.fatherName, participantId: participant.participantId },
         navratriDay: day,
         distributionDate: todayDate,
+        itemType,
+        itemLabel,
         giftClaimed: claim.giftClaimed,
         giftClaimedAt: claim.giftClaimedAt ? toISTString(claim.giftClaimedAt) : undefined,
         foodClaimed: claim.foodClaimed,

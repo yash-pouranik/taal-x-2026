@@ -17,7 +17,11 @@ import {
   Loader2,
   Gift,
   UtensilsCrossed,
+  LogIn,
+  LogOut,
+  Footprints,
 } from 'lucide-react'
+import { formatDurationHindi } from '@/lib/dateUtils'
 
 type ScanState = 'scanning' | 'loading' | 'verify' | 'success' | 'error'
 
@@ -30,9 +34,17 @@ interface VerifyResult {
   }
   navratriDay: number
   distributionDate: string
+  hasEntered: boolean
+  hasExited: boolean
+  canMarkEntry: boolean
   canClaimGift: boolean
   canClaimFood: boolean
+  canMarkExit: boolean
+  entryTime?: string
+  exitTime?: string
   claim?: {
+    entryTime?: string
+    exitTime?: string
     giftClaimed: boolean
     giftClaimedAt?: string
     giftStaffName?: string
@@ -50,6 +62,8 @@ interface ErrorResult {
     navratriDay: number
     claimedAt?: string
     claimedBy?: string
+    entryTime?: string
+    exitTime?: string
     giftClaimed?: boolean
     giftClaimedAt?: string
     giftStaffName?: string
@@ -179,7 +193,7 @@ export default function ScannerPage() {
     }
   }
 
-  async function confirmClaim(itemType: 'gift' | 'food' | 'both') {
+  async function confirmClaim(itemType: 'entry' | 'gift' | 'food' | 'both' | 'exit') {
     if (!verifyData) return
     setConfirming(true)
     try {
@@ -197,12 +211,12 @@ export default function ScannerPage() {
         setSuccessData({
           name: data.claim.participant.name,
           navratriDay: data.claim.navratriDay,
-          itemLabel: itemType === 'both' ? 'उपहार व भोजन पैकेट' : itemType === 'gift' ? 'उपहार / प्रॉप' : 'भोजन पैकेट',
+          itemLabel: data.claim.itemLabel,
           claimedAt: data.claim.claimedAt,
         })
         setState('success')
       } else {
-        setErrorData(data || { error: 'FAILED', message: 'वितरण दर्ज करने में त्रुटि हुई' })
+        setErrorData(data || { error: 'FAILED', message: 'प्रक्रिया दर्ज करने में त्रुटि हुई' })
         setState('error')
       }
     } catch (err) {
@@ -236,7 +250,7 @@ export default function ScannerPage() {
           <span>स्कैनर बंद करें</span>
         </Link>
         <span className="text-xs font-bold tracking-wider text-orange-400">
-          वितरण काउंटर
+          प्रवेश व वितरण काउंटर
         </span>
       </header>
 
@@ -300,7 +314,7 @@ export default function ScannerPage() {
             </div>
             <h3 className="text-lg font-bold text-white">पास की जांच हो रही है...</h3>
             <p className="text-xs text-slate-400 mt-1">
-              डेटाबेस में आज के वितरण की स्थिति जांची जा रही है
+              डेटाबेस में प्रवेश व वितरण की स्थिति जांची जा रही है
             </p>
           </div>
         )}
@@ -309,163 +323,267 @@ export default function ScannerPage() {
         {state === 'verify' && verifyData && (
           <div className="w-full flex flex-col items-center gap-5 animate-in fade-in zoom-in-95 duration-150">
             {/* Participant Card */}
-            <div className="bg-slate-900 border border-blue-500/30 rounded-3xl p-6 sm:p-7 w-full shadow-2xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl pointer-events-none" />
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-7 w-full shadow-2xl relative overflow-hidden">
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold">
+                  <UserCheck className="w-3.5 h-3.5" />
+                  <span>सत्यापित प्रतिभागी</span>
+                </div>
 
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold mb-4">
-                <UserCheck className="w-3.5 h-3.5" />
-                <span>सत्यापित प्रतिभागी</span>
+                {/* Stage Badge */}
+                {!verifyData.hasEntered ? (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2.5 py-0.5 rounded-full">
+                    <LogIn className="w-3 h-3" />
+                    <span>प्रवेश बाकी (Gate Entry)</span>
+                  </span>
+                ) : !verifyData.hasExited ? (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <span>अंदर हैं (IN)</span>
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-400 bg-slate-800 px-2.5 py-0.5 rounded-full">
+                    <LogOut className="w-3 h-3 text-slate-400" />
+                    <span>बाहर जा चुके (OUT)</span>
+                  </span>
+                )}
               </div>
 
-              <h2 className="text-3xl font-black text-white tracking-tight">
+              <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
                 {verifyData.participant.name}
               </h2>
               <p className="text-sm font-medium text-slate-300 mt-1">
                 पिता / अभिभावक: <strong className="text-white">{verifyData.participant.fatherName}</strong>
               </p>
 
-              <div className="mt-2">
+              <div className="mt-2 flex flex-wrap items-center gap-2">
                 <span className="font-mono text-xs font-bold px-2.5 py-0.5 rounded bg-slate-800 text-slate-300">
                   {verifyData.participant.participantId}
                 </span>
+
+                {verifyData.entryTime && (
+                  <span className="text-[11px] text-slate-400 font-mono">
+                    प्रवेश: {formatClaimTime(verifyData.entryTime)}
+                    {!verifyData.hasExited && (
+                      <strong className="text-emerald-400 font-sans ml-1">
+                        ({formatDurationHindi(verifyData.entryTime)} पहले)
+                      </strong>
+                    )}
+                  </span>
+                )}
+
+                {verifyData.exitTime && (
+                  <span className="text-[11px] text-slate-400 font-mono">
+                    • प्रस्थान: {formatClaimTime(verifyData.exitTime)}
+                    <strong className="text-blue-300 font-sans ml-1">
+                      (कुल {formatDurationHindi(verifyData.entryTime!, verifyData.exitTime)} रहे)
+                    </strong>
+                  </span>
+                )}
               </div>
 
-              {/* Status Box: Gift & Food Status */}
-              <div className="mt-5 space-y-2.5">
-                <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400">
-                      <Gift className="w-4 h-4" />
+              {/* Status Box: Gift & Bhojan Status (Only shown once entered) */}
+              {verifyData.hasEntered && (
+                <div className="mt-5 space-y-2.5">
+                  <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-1.5 rounded-xl bg-emerald-500/10 text-emerald-400">
+                        <Gift className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <span className="text-xs font-bold text-white block">उपहार / प्रॉप (Gift)</span>
+                        <span className="text-[10px] text-slate-400">दिवस {verifyData.navratriDay}</span>
+                      </div>
                     </div>
                     <div>
-                      <span className="text-xs font-bold text-white block">उपहार / प्रॉप (Gift)</span>
-                      <span className="text-[11px] text-slate-400">दिवस {verifyData.navratriDay} का उपहार</span>
+                      {verifyData.canClaimGift ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-lg">
+                          देना बाकी
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-lg">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                          <span>वितरित ✓</span>
+                        </span>
+                      )}
                     </div>
                   </div>
-                  <div>
-                    {verifyData.canClaimGift ? (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>देना बाकी</span>
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-400 bg-slate-800/80 px-2.5 py-1 rounded-lg">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                        <span>दिया जा चुका है</span>
-                      </span>
-                    )}
-                  </div>
-                </div>
 
-                <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="p-2 rounded-xl bg-blue-500/10 text-blue-400">
-                      <UtensilsCrossed className="w-4 h-4" />
+                  <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-1.5 rounded-xl bg-blue-500/10 text-blue-400">
+                        <UtensilsCrossed className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <span className="text-xs font-bold text-white block">भोजन पैकेट (Bhojan)</span>
+                        <span className="text-[10px] text-slate-400">दैनिक प्रसादम</span>
+                      </div>
                     </div>
                     <div>
-                      <span className="text-xs font-bold text-white block">भोजन पैकेट (Food)</span>
-                      <span className="text-[11px] text-slate-400">दैनिक प्रसादम / भोजन</span>
+                      {verifyData.canClaimFood ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded-lg">
+                          देना बाकी
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-lg">
+                          <CheckCircle2 className="w-3 h-3 text-blue-500" />
+                          <span>वितरित ✓</span>
+                        </span>
+                      )}
                     </div>
                   </div>
-                  <div>
-                    {verifyData.canClaimFood ? (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2.5 py-1 rounded-lg">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>देना बाकी</span>
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-400 bg-slate-800/80 px-2.5 py-1 rounded-lg">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-blue-500" />
-                        <span>दिया जा चुका है</span>
-                      </span>
-                    )}
-                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
-            {/* Confirmation CTA */}
+            {/* ── ACTION BUTTONS ── */}
             <div className="w-full space-y-3">
-              {verifyData.canClaimGift && verifyData.canClaimFood && (
-                <>
+              {/* STAGE 1: FIRST SCAN — ONLY ENTRANCE CAN BE ACCEPTED! */}
+              {verifyData.canMarkEntry && (
+                <div className="space-y-3">
+                  <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-3.5 text-center">
+                    <p className="text-xs text-amber-300 font-semibold">
+                      प्रथम स्कैन — प्रतिभागी का प्रवेश (Entry) दर्ज करें
+                    </p>
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      सामग्री (उपहार / भोजन) प्रवेश दर्ज होने के बाद ही वितरित की जा सकेगी।
+                    </p>
+                  </div>
+
                   <button
-                    onClick={() => confirmClaim('both')}
+                    onClick={() => confirmClaim('entry')}
                     disabled={confirming}
-                    className="w-full bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:from-emerald-500 hover:to-emerald-500 active:scale-[0.99] disabled:opacity-60 text-white text-base font-bold py-4 rounded-2xl shadow-xl shadow-emerald-950/40 transition-all flex items-center justify-center gap-2"
+                    className="w-full bg-gradient-to-r from-orange-600 via-amber-600 to-orange-600 hover:from-orange-500 hover:to-orange-500 active:scale-[0.99] disabled:opacity-60 text-white text-base font-bold py-4 rounded-2xl shadow-xl shadow-orange-950/40 transition-all flex items-center justify-center gap-2"
                   >
                     {confirming ? (
                       <>
                         <Loader2 className="w-5 h-5 animate-spin" />
-                        <span>दर्ज हो रहा है...</span>
+                        <span>प्रवेश दर्ज हो रहा है...</span>
                       </>
                     ) : (
                       <>
-                        <CheckCircle2 className="w-5 h-5" />
-                        <span>दोनों दें (उपहार + भोजन पैकेट)</span>
+                        <LogIn className="w-5 h-5" />
+                        <span>प्रवेश दर्ज करें (Mark Entry In)</span>
                       </>
                     )}
                   </button>
+                </div>
+              )}
 
-                  <div className="grid grid-cols-2 gap-2.5">
+              {/* STAGE 2: SUBSEQUENT SCAN — ENTRY ALREADY DONE: FOOD, GIFT, AND EXIT */}
+              {verifyData.hasEntered && (
+                <div className="space-y-3">
+                  {/* Both Gift & Food Available */}
+                  {verifyData.canClaimGift && verifyData.canClaimFood && (
+                    <>
+                      <button
+                        onClick={() => confirmClaim('both')}
+                        disabled={confirming}
+                        className="w-full bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:from-emerald-500 hover:to-emerald-500 active:scale-[0.99] disabled:opacity-60 text-white text-base font-bold py-4 rounded-2xl shadow-xl shadow-emerald-950/40 transition-all flex items-center justify-center gap-2"
+                      >
+                        {confirming ? (
+                          <>
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                            <span>दर्ज हो रहा है...</span>
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 className="w-5 h-5" />
+                            <span>दोनों दें (उपहार + भोजन पैकेट)</span>
+                          </>
+                        )}
+                      </button>
+
+                      <div className="grid grid-cols-2 gap-2.5">
+                        <button
+                          onClick={() => confirmClaim('gift')}
+                          disabled={confirming}
+                          className="w-full bg-slate-900 hover:bg-slate-800 border border-emerald-500/30 text-emerald-300 font-bold py-3.5 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors"
+                        >
+                          <Gift className="w-4 h-4 text-emerald-400" />
+                          <span>केवल उपहार</span>
+                        </button>
+
+                        <button
+                          onClick={() => confirmClaim('food')}
+                          disabled={confirming}
+                          className="w-full bg-slate-900 hover:bg-slate-800 border border-blue-500/30 text-blue-300 font-bold py-3.5 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors"
+                        >
+                          <UtensilsCrossed className="w-4 h-4 text-blue-400" />
+                          <span>केवल भोजन</span>
+                        </button>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Only Gift Available */}
+                  {verifyData.canClaimGift && !verifyData.canClaimFood && (
                     <button
                       onClick={() => confirmClaim('gift')}
                       disabled={confirming}
-                      className="w-full bg-slate-900 hover:bg-slate-800 border border-emerald-500/30 text-emerald-300 font-bold py-3.5 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors"
+                      className="w-full bg-emerald-600 hover:bg-emerald-500 active:scale-[0.99] disabled:opacity-60 text-white text-base font-bold py-4 rounded-2xl shadow-xl shadow-emerald-950/40 transition-all flex items-center justify-center gap-2"
                     >
-                      <Gift className="w-4 h-4 text-emerald-400" />
-                      <span>केवल उपहार</span>
+                      {confirming ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          <span>दर्ज हो रहा है...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Gift className="w-5 h-5" />
+                          <span>उपहार / प्रॉप दें</span>
+                        </>
+                      )}
                     </button>
+                  )}
 
+                  {/* Only Food Available */}
+                  {!verifyData.canClaimGift && verifyData.canClaimFood && (
                     <button
                       onClick={() => confirmClaim('food')}
                       disabled={confirming}
-                      className="w-full bg-slate-900 hover:bg-slate-800 border border-blue-500/30 text-blue-300 font-bold py-3.5 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors"
+                      className="w-full bg-blue-600 hover:bg-blue-500 active:scale-[0.99] disabled:opacity-60 text-white text-base font-bold py-4 rounded-2xl shadow-xl shadow-blue-950/40 transition-all flex items-center justify-center gap-2"
                     >
-                      <UtensilsCrossed className="w-4 h-4 text-blue-400" />
-                      <span>केवल भोजन</span>
+                      {confirming ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          <span>दर्ज हो रहा है...</span>
+                        </>
+                      ) : (
+                        <>
+                          <UtensilsCrossed className="w-5 h-5" />
+                          <span>भोजन पैकेट दें</span>
+                        </>
+                      )}
                     </button>
-                  </div>
-                </>
-              )}
-
-              {verifyData.canClaimGift && !verifyData.canClaimFood && (
-                <button
-                  onClick={() => confirmClaim('gift')}
-                  disabled={confirming}
-                  className="w-full bg-emerald-600 hover:bg-emerald-500 active:scale-[0.99] disabled:opacity-60 text-white text-base font-bold py-4 rounded-2xl shadow-xl shadow-emerald-950/40 transition-all flex items-center justify-center gap-2"
-                >
-                  {confirming ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      <span>दर्ज हो रहा है...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Gift className="w-5 h-5" />
-                      <span>उपहार / प्रॉप दें</span>
-                    </>
                   )}
-                </button>
-              )}
 
-              {!verifyData.canClaimGift && verifyData.canClaimFood && (
-                <button
-                  onClick={() => confirmClaim('food')}
-                  disabled={confirming}
-                  className="w-full bg-blue-600 hover:bg-blue-500 active:scale-[0.99] disabled:opacity-60 text-white text-base font-bold py-4 rounded-2xl shadow-xl shadow-blue-950/40 transition-all flex items-center justify-center gap-2"
-                >
-                  {confirming ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      <span>दर्ज हो रहा है...</span>
-                    </>
-                  ) : (
-                    <>
-                      <UtensilsCrossed className="w-5 h-5" />
-                      <span>भोजन पैकेट दें</span>
-                    </>
+                  {/* Neither Gift nor Food available (already given) */}
+                  {!verifyData.canClaimGift && !verifyData.canClaimFood && (
+                    <div className="p-3 bg-slate-900 border border-slate-800 rounded-xl text-center text-xs text-emerald-400 font-semibold flex items-center justify-center gap-1.5">
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>आज के उपहार व भोजन दोनों दिए जा चुके हैं</span>
+                    </div>
                   )}
-                </button>
+
+                  {/* EXIT ACTION: If participant is currently IN, gate/counter staff can mark Exit! */}
+                  {verifyData.canMarkExit && (
+                    <div className="pt-2">
+                      <button
+                        onClick={() => confirmClaim('exit')}
+                        disabled={confirming}
+                        className="w-full bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-red-500/50 text-slate-300 hover:text-red-300 font-bold py-3.5 rounded-xl text-xs flex items-center justify-center gap-2 transition-all"
+                      >
+                        {confirming ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <LogOut className="w-4 h-4 text-red-400" />
+                        )}
+                        <span>प्रस्थान दर्ज करें (Mark Exit / बाहर गए)</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
               )}
 
               <button
@@ -515,7 +633,11 @@ export default function ScannerPage() {
           <div className="w-full flex flex-col items-center gap-5 text-center animate-in fade-in zoom-in-95 duration-150">
             <div className="bg-slate-900 border border-red-500/30 rounded-3xl p-7 w-full shadow-2xl">
               <div className="w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 mx-auto mb-4">
-                {errorData.error === 'ALREADY_CLAIMED' ? (
+                {errorData.error === 'ALL_COMPLETED' ? (
+                  <CheckCircle2 className="w-7 h-7 text-emerald-400" />
+                ) : errorData.error === 'ENTRY_REQUIRED' ? (
+                  <LogIn className="w-7 h-7 text-amber-400" />
+                ) : errorData.error === 'ALREADY_CLAIMED' ? (
                   <AlertTriangle className="w-7 h-7 text-amber-400" />
                 ) : errorData.error === 'NOT_STARTED' ? (
                   <Clock className="w-7 h-7 text-blue-400" />
@@ -527,12 +649,20 @@ export default function ScannerPage() {
               </div>
 
               <h2 className="text-lg font-bold text-white mb-1.5">
-                {errorData.error === 'ALREADY_CLAIMED'
+                {errorData.error === 'ALL_COMPLETED'
+                  ? 'आज की सभी प्रक्रियाएं पूर्ण ✅'
+                  : errorData.error === 'ENTRY_REQUIRED'
+                  ? 'पहले प्रवेश (Entry) आवश्यक है'
+                  : errorData.error === 'ALREADY_ENTERED'
+                  ? 'प्रवेश पहले ही दर्ज है'
+                  : errorData.error === 'ALREADY_EXITED'
+                  ? 'प्रस्थान पहले ही दर्ज है'
+                  : errorData.error === 'ALREADY_CLAIMED'
                   ? 'आज का वितरण पहले ही हो चुका है'
                   : errorData.error === 'CANCELLED'
                   ? 'यह पास रद्द (Cancelled) है'
                   : errorData.error === 'NOT_STARTED'
-                  ? 'वितरण अभी प्रारंभ नहीं हुआ'
+                  ? 'कार्यक्रम अभी प्रारंभ नहीं हुआ'
                   : errorData.error === 'ENDED'
                   ? 'कार्यक्रम समाप्त हो चुका है'
                   : errorData.error === 'INVALID_QR'
@@ -541,11 +671,7 @@ export default function ScannerPage() {
               </h2>
 
               <p className="text-xs text-slate-400 leading-relaxed max-w-xs mx-auto">
-                {errorData.error === 'ALREADY_CLAIMED'
-                  ? 'इस प्रतिभागी को आज की सामग्री पहले ही दी जा चुकी है।'
-                  : errorData.error === 'CANCELLED'
-                  ? 'इस प्रतिभागी का रजिस्ट्रेशन रद्द किया जा चुका है। सामग्री नहीं दी जा सकती।'
-                  : errorData.message}
+                {errorData.message}
               </p>
 
               {errorData.participant && (

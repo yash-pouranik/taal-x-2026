@@ -113,3 +113,28 @@ export function isDistributionActive(
 
   return { active: true, day, todayDate }
 }
+
+/**
+ * Formats time difference into natural Hindi duration
+ * e.g. "45 मिनट", "1 घंटा 15 मिनट", "2 घंटे 30 मिनट"
+ */
+export function formatDurationHindi(start: Date | string, end?: Date | string): string {
+  try {
+    const startTime = new Date(start).getTime()
+    const endTime = end ? new Date(end).getTime() : Date.now()
+    if (isNaN(startTime)) return ''
+    const diffMinutes = Math.max(0, Math.floor((endTime - startTime) / (1000 * 60)))
+    const hours = Math.floor(diffMinutes / 60)
+    const mins = diffMinutes % 60
+
+    if (hours === 0) {
+      return `${mins} मिनट`
+    } else if (mins === 0) {
+      return `${hours} घंटे`
+    } else {
+      return `${hours} घंटे ${mins} मिनट`
+    }
+  } catch {
+    return ''
+  }
+}

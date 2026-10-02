@@ -31,6 +31,12 @@ interface ScanRecord {
   }
   navratriDay: number
   distributionDate: string
+  hasEntered: boolean
+  hasExited: boolean
+  isInside: boolean
+  entryTime?: string
+  exitTime?: string
+  timeSpent?: string
   giftClaimed: boolean
   giftClaimedAt?: string
   giftStaffName?: string
@@ -49,6 +55,8 @@ interface DateOption {
 interface SummaryData {
   totalParticipants: number
   turnout: number
+  currentlyInside: number
+  exitedCount: number
   giftDistributed: number
   foodDistributed: number
   pendingTurnout: number
@@ -73,6 +81,8 @@ export default function DailyScansPage() {
   const [summary, setSummary] = useState<SummaryData>({
     totalParticipants: 0,
     turnout: 0,
+    currentlyInside: 0,
+    exitedCount: 0,
     giftDistributed: 0,
     foodDistributed: 0,
     pendingTurnout: 0,
@@ -82,7 +92,7 @@ export default function DailyScansPage() {
   const [scans, setScans] = useState<ScanRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState<'all' | 'both' | 'gift_only' | 'food_only'>('all')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'inside' | 'exited' | 'both' | 'gift_only' | 'food_only'>('all')
 
   async function fetchScanData(targetDate?: string) {
     setLoading(true)
@@ -126,6 +136,12 @@ export default function DailyScansPage() {
 
     if (!matchesSearch) return false
 
+    if (statusFilter === 'inside') {
+      return record.isInside
+    }
+    if (statusFilter === 'exited') {
+      return record.hasExited
+    }
     if (statusFilter === 'both') {
       return record.giftClaimed && record.foodClaimed
     }
@@ -149,13 +165,15 @@ export default function DailyScansPage() {
       'Father Name',
       'Navratri Day',
       'Date (IST)',
-      'First Check-In (IST)',
+      'Entry Time (IST)',
+      'Exit Time (IST)',
+      'Time Spent / Status',
       'Gift Status',
       'Gift Claim Time',
       'Gift Staff',
-      'Food Packet Status',
-      'Food Packet Claim Time',
-      'Food Packet Staff',
+      'Bhojan Packet Status',
+      'Bhojan Packet Claim Time',
+      'Bhojan Packet Staff',
     ]
 
     const rows = filteredScans.map((s) => [
@@ -164,9 +182,13 @@ export default function DailyScansPage() {
       `"${s.participant.fatherName}"`,
       s.navratriDay,
       s.distributionDate,
-      s.claimedAt
-        ? new Date(s.claimedAt).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })
+      s.entryTime
+        ? new Date(s.entryTime).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })
         : '-',
+      s.exitTime
+        ? new Date(s.exitTime).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })
+        : '-',
+      s.isInside ? `"अंदर हैं (${s.timeSpent || ''})"` : s.hasExited ? `"बाहर गए (कुल ${s.timeSpent || ''})"` : '"बाकी"',
       s.giftClaimed ? 'CLAIMED' : 'PENDING',
       s.giftClaimedAt
         ? new Date(s.giftClaimedAt).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })
@@ -211,7 +233,7 @@ export default function DailyScansPage() {
               </h1>
             </div>
             <p className="text-sm text-slate-500 mt-1">
-              प्रतिभागी उपस्थिति, उपहार/प्रॉप और भोजन पैकेट वितरण का लाइव दैनिक विवरण।
+              प्रतिभागी उपस्थिति (IN/OUT), उपहार और भोजन पैकेट वितरण का लाइव दैनिक विवरण।
             </p>
           </div>
 
@@ -298,87 +320,105 @@ export default function DailyScansPage() {
           </div>
         )}
 
-        {/* 4 Summary Stat Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* 5 Summary Stat Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
           {/* Turnout Card */}
-          <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs space-y-2">
+          <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/80 shadow-xs space-y-2">
             <div className="flex items-center justify-between text-slate-400">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">दैनिक उपस्थिति (Turnout)</span>
-              <div className="p-2 rounded-xl bg-orange-50 text-orange-600">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">कुल उपस्थिति</span>
+              <div className="p-1.5 rounded-xl bg-orange-50 text-orange-600">
                 <Users className="w-4 h-4" />
               </div>
             </div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-extrabold text-slate-900">{summary.turnout}</span>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-2xl sm:text-3xl font-extrabold text-slate-900">{summary.turnout}</span>
               <span className="text-xs font-semibold text-slate-400">/ {summary.totalParticipants}</span>
             </div>
-            <div className="flex items-center justify-between text-xs text-slate-500 pt-1 border-t border-slate-100">
-              <span>उपस्थिति प्रतिशत</span>
+            <div className="text-[11px] text-slate-500 pt-1 border-t border-slate-100 flex justify-between">
+              <span>प्रतिशत</span>
               <span className="font-bold text-orange-600">{turnoutPercent}%</span>
             </div>
           </div>
 
-          {/* Gifts / Props Distributed */}
-          <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs space-y-2">
+          {/* Currently IN Card */}
+          <div className="bg-white rounded-3xl p-4 sm:p-5 border border-emerald-200/80 shadow-xs space-y-2 bg-gradient-to-b from-white to-emerald-50/20">
             <div className="flex items-center justify-between text-slate-400">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">उपहार / प्रॉप (Gifts)</span>
-              <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600">
-                <Gift className="w-4 h-4" />
+              <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-800">अभी अंदर हैं (IN)</span>
+              <div className="p-1.5 rounded-xl bg-emerald-50 text-emerald-600">
+                <LogIn className="w-4 h-4" />
               </div>
             </div>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-extrabold text-emerald-700">{summary.giftDistributed}</span>
+              <span className="text-2xl sm:text-3xl font-extrabold text-emerald-700">{summary.currentlyInside}</span>
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            </div>
+            <div className="text-[11px] text-slate-500 pt-1 border-t border-emerald-100 flex justify-between">
+              <span>लाइव परिसर में</span>
+              <span className="font-semibold text-emerald-700">सक्रिय</span>
+            </div>
+          </div>
+
+          {/* Exited Card */}
+          <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/80 shadow-xs space-y-2">
+            <div className="flex items-center justify-between text-slate-400">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">प्रस्थान किया (OUT)</span>
+              <div className="p-1.5 rounded-xl bg-slate-100 text-slate-600">
+                <ExitIcon className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-2xl sm:text-3xl font-extrabold text-slate-700">{summary.exitedCount}</span>
+              <span className="text-xs font-semibold text-slate-400">गए</span>
+            </div>
+            <div className="text-[11px] text-slate-500 pt-1 border-t border-slate-100 flex justify-between">
+              <span>बाहर जा चुके</span>
+              <span className="font-semibold text-slate-600">{summary.exitedCount}</span>
+            </div>
+          </div>
+
+          {/* Gifts / Props Distributed */}
+          <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/80 shadow-xs space-y-2">
+            <div className="flex items-center justify-between text-slate-400">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">उपहार / प्रॉप</span>
+              <div className="p-1.5 rounded-xl bg-purple-50 text-purple-600">
+                <Gift className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-2xl sm:text-3xl font-extrabold text-purple-700">{summary.giftDistributed}</span>
               <span className="text-xs font-semibold text-slate-400">वितरित</span>
             </div>
-            <div className="flex items-center justify-between text-xs text-slate-500 pt-1 border-t border-slate-100">
-              <span>देना बाकी</span>
+            <div className="text-[11px] text-slate-500 pt-1 border-t border-slate-100 flex justify-between">
+              <span>बाकी</span>
               <span className="font-semibold text-amber-600">{summary.pendingGift}</span>
             </div>
           </div>
 
-          {/* Food Packets Distributed */}
-          <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs space-y-2">
+          {/* Bhojan Packets Distributed */}
+          <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/80 shadow-xs space-y-2 col-span-2 sm:col-span-1">
             <div className="flex items-center justify-between text-slate-400">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">भोजन पैकेट (Food)</span>
-              <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">भोजन पैकेट</span>
+              <div className="p-1.5 rounded-xl bg-blue-50 text-blue-600">
                 <UtensilsCrossed className="w-4 h-4" />
               </div>
             </div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-extrabold text-blue-700">{summary.foodDistributed}</span>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-2xl sm:text-3xl font-extrabold text-blue-700">{summary.foodDistributed}</span>
               <span className="text-xs font-semibold text-slate-400">वितरित</span>
             </div>
-            <div className="flex items-center justify-between text-xs text-slate-500 pt-1 border-t border-slate-100">
-              <span>देना बाकी</span>
+            <div className="text-[11px] text-slate-500 pt-1 border-t border-slate-100 flex justify-between">
+              <span>बाकी</span>
               <span className="font-semibold text-amber-600">{summary.pendingFood}</span>
-            </div>
-          </div>
-
-          {/* Total Registered Active */}
-          <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs space-y-2">
-            <div className="flex items-center justify-between text-slate-400">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">आना बाकी (Pending)</span>
-              <div className="p-2 rounded-xl bg-purple-50 text-purple-600">
-                <Clock className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-extrabold text-slate-700">{summary.pendingTurnout}</span>
-              <span className="text-xs font-semibold text-slate-400">प्रतीक्षारत</span>
-            </div>
-            <div className="flex items-center justify-between text-xs text-slate-500 pt-1 border-t border-slate-100">
-              <span>कुल सक्रिय पास</span>
-              <span className="font-bold text-slate-800">{summary.totalParticipants}</span>
             </div>
           </div>
         </div>
 
         {/* Scan Log Table Section */}
-        <div className="bg-white rounded-3xl shadow-xs border border-slate-200/80 p-6 sm:p-7 space-y-4">
+        <div className="bg-white rounded-3xl shadow-xs border border-slate-200/80 p-5 sm:p-7 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h2 className="font-bold text-base text-slate-900">
-                प्रतिभागी स्कैन सूची
+                प्रतिभागी स्कैन व उपस्थिति सूची
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
                 {selectedDate} (दिवस {selectedDay}) पर दर्ज किए गए स्कैन
@@ -400,10 +440,12 @@ export default function DailyScansPage() {
 
               <select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as 'all' | 'both' | 'gift_only' | 'food_only')}
+                onChange={(e) => setStatusFilter(e.target.value as 'all' | 'inside' | 'exited' | 'both' | 'gift_only' | 'food_only')}
                 className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-1 focus:ring-orange-500"
               >
                 <option value="all">सभी स्कैन ({scans.length})</option>
+                <option value="inside">🟢 अभी अंदर हैं ({summary.currentlyInside})</option>
+                <option value="exited">⚪ प्रस्थान कर चुके ({summary.exitedCount})</option>
                 <option value="both">दोनों सामग्री वितरित</option>
                 <option value="gift_only">केवल उपहार वितरित</option>
                 <option value="food_only">केवल भोजन वितरित</option>
@@ -421,12 +463,12 @@ export default function DailyScansPage() {
               दिवस {selectedDay} के लिए कोई स्कैन रिकॉर्ड नहीं मिला।
             </div>
           ) : (
-            <div className="overflow-x-auto -mx-6 sm:mx-0">
-              <table className="w-full text-left text-xs border-collapse">
+            <div className="overflow-x-auto -mx-5 sm:mx-0">
+              <table className="w-full text-left text-xs border-collapse min-w-[650px]">
                 <thead>
                   <tr className="border-b border-slate-200 bg-slate-50/70 text-slate-500 uppercase tracking-wider text-[10px] font-semibold">
                     <th className="py-3 px-4 rounded-l-xl">प्रतिभागी</th>
-                    <th className="py-3 px-3">प्रथम प्रवेश</th>
+                    <th className="py-3 px-3">उपस्थिति व समय (IN / OUT)</th>
                     <th className="py-3 px-3">उपहार / प्रॉप</th>
                     <th className="py-3 px-3">भोजन पैकेट</th>
                     <th className="py-3 px-4 rounded-r-xl text-right">विवरण</th>
@@ -452,13 +494,41 @@ export default function DailyScansPage() {
                         </div>
                       </td>
 
-                      {/* First Check-in Time */}
-                      <td className="py-3.5 px-3 whitespace-nowrap text-slate-600 font-mono text-[11px]">
-                        {new Date(record.claimedAt).toLocaleTimeString('en-IN', {
-                          timeZone: 'Asia/Kolkata',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
+                      {/* Attendance & Duration Status */}
+                      <td className="py-3.5 px-3 whitespace-nowrap">
+                        {record.isInside ? (
+                          <div className="flex flex-col">
+                            <span className="inline-flex items-center gap-1.5 text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md text-[11px] font-bold w-fit">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                              <span>अंदर हैं (IN)</span>
+                            </span>
+                            <span className="text-[11px] text-slate-600 mt-1 font-mono">
+                              प्रवेश: {record.entryTime ? new Date(record.entryTime).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' }) : '-'}
+                            </span>
+                            <span className="text-[10px] text-emerald-600 font-medium">
+                              {record.timeSpent ? `${record.timeSpent} से अंदर हैं` : ''}
+                            </span>
+                          </div>
+                        ) : record.hasExited ? (
+                          <div className="flex flex-col">
+                            <span className="inline-flex items-center gap-1 text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md text-[11px] font-semibold w-fit">
+                              <ExitIcon className="w-3 h-3 text-slate-500" />
+                              <span>बाहर जा चुके (OUT)</span>
+                            </span>
+                            <span className="text-[10px] text-slate-500 mt-0.5 font-mono">
+                              प्रवेश: {record.entryTime ? new Date(record.entryTime).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' }) : '-'}
+                              {' • '}
+                              प्रस्थान: {record.exitTime ? new Date(record.exitTime).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' }) : '-'}
+                            </span>
+                            <span className="text-[10px] text-blue-600 font-medium">
+                              कुल समय: {record.timeSpent}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md text-[11px]">
+                            प्रवेश बाकी
+                          </span>
+                        )}
                       </td>
 
                       {/* Gift Status */}
