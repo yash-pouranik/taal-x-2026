@@ -67,8 +67,8 @@ export default function BulkPrintSheetPage() {
     )
   })
 
-  // Group into pages of 8 cards each
-  const CARDS_PER_PAGE = 8
+  // Group into pages of 20 compact tokens each (4 cols x 5 rows)
+  const CARDS_PER_PAGE = 20
   const pages: ParticipantWithQR[][] = []
   for (let i = 0; i < filtered.length; i += CARDS_PER_PAGE) {
     pages.push(filtered.slice(i, i + CARDS_PER_PAGE))
@@ -126,10 +126,10 @@ export default function BulkPrintSheetPage() {
         <div className="max-w-6xl mx-auto mt-3 text-xs text-slate-500 flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-t border-slate-100 pt-2">
           <span className="flex items-center gap-1.5 text-slate-600 font-medium">
             <FileCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-            <span>प्रति A4 पेज पर 8 कार्ड। 1,000 कार्ड केवल ~125 शीट में प्रिंट हो जाते हैं।</span>
+            <span>प्रति A4 पेज पर 20 क्यूआर टोकन (4 × 5 ग्रिड)। केवल 50 शीट में 1,000 टोकन प्रिंट होते हैं।</span>
           </span>
           <span className="text-slate-400">
-            सटीक कटिंग के लिए प्रिंटर मार्जिन &quot;None&quot; या &quot;Minimum&quot; सेट करें।
+            प्रिंट सेटिंग में मार्जिन &quot;None&quot; या &quot;Minimum&quot; सेट करें ताकि सभी टोकन पूरे पेज पर सही आएं।
           </span>
         </div>
       </header>
@@ -149,60 +149,40 @@ export default function BulkPrintSheetPage() {
           pages.map((pageGroup, pageIndex) => (
             <div
               key={pageIndex}
-              className="a4-sheet bg-white shadow-xl print:shadow-none mb-8 print:mb-0 p-6 print:p-3 rounded-2xl print:rounded-none border border-slate-200/80 print:border-none break-after-page"
+              className="a4-sheet bg-white shadow-xl print:shadow-none mb-8 print:mb-0 p-5 print:p-2 rounded-2xl print:rounded-none border border-slate-200/80 print:border-none break-after-page"
               style={{
                 pageBreakAfter: 'always',
                 minHeight: '270mm',
               }}
             >
-              {/* 2 columns × 4 rows = 8 cards */}
-              <div className="grid grid-cols-2 gap-3.5 h-full">
+              {/* 4 columns × 5 rows = 20 tokens per A4 sheet */}
+              <div className="grid grid-cols-4 gap-2.5 h-full">
                 {pageGroup.map((p) => (
                   <div
                     key={p._id}
-                    className="border-2 border-dashed border-slate-300 print:border-slate-400 rounded-xl p-3 flex flex-col justify-between bg-white relative"
-                    style={{ minHeight: '62mm' }}
+                    className="border border-dashed border-slate-400 p-2 rounded-lg flex flex-col items-center justify-center text-center bg-white overflow-hidden"
+                    style={{ minHeight: '50mm', maxHeight: '54mm' }}
                   >
-                    {/* Header: Count Number */}
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-1.5 mb-1.5">
-                      <span className="text-xs font-mono font-black bg-orange-100 text-orange-950 px-2.5 py-0.5 rounded border border-orange-200">
-                        काउंट नंबर: #{p.countNumber ?? p.participantId}
-                      </span>
-                      <span className="text-[10px] font-mono text-slate-400">
-                        {p.participantId}
-                      </span>
+                    {/* 1. QR Code */}
+                    {p.qrDataUrl ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={p.qrDataUrl}
+                        alt={`QR for ${p.name}`}
+                        className="w-20 h-20 max-w-[28mm] max-h-[28mm] object-contain shrink-0"
+                      />
+                    ) : (
+                      <div className="w-20 h-20 bg-slate-100 rounded animate-pulse" />
+                    )}
+
+                    {/* 2. Number underneath */}
+                    <div className="text-xs font-black font-mono text-slate-900 mt-1 leading-none">
+                      #{p.countNumber ?? p.participantId}
                     </div>
 
-                    {/* Body: Large QR + Kanya Ka Naam */}
-                    <div className="flex items-center gap-3.5 my-auto">
-                      {p.qrDataUrl ? (
-                        /* eslint-disable-next-line @next/next/no-img-element */
-                        <img
-                          src={p.qrDataUrl}
-                          alt={`QR for ${p.name}`}
-                          className="w-24 h-24 shrink-0 rounded-lg border border-slate-200 p-0.5"
-                        />
-                      ) : (
-                        <div className="w-24 h-24 bg-slate-50 rounded-lg shrink-0 animate-pulse" />
-                      )}
-
-                      <div className="flex-1 min-w-0 pr-1">
-                        <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
-                          कन्या का नाम
-                        </p>
-                        <h2 className="text-base font-black text-slate-900 leading-tight mt-0.5">
-                          {p.name}
-                        </h2>
-                      </div>
-                    </div>
-
-                    {/* Footer / Cut Marker */}
-                    <div className="border-t border-slate-100 pt-1 flex justify-between items-center text-[9px] text-slate-400 font-mono">
-                      <span>★ पास</span>
-                      <span className="flex items-center gap-0.5">
-                        <Scissors className="w-2.5 h-2.5 text-slate-400" />
-                        <span>डैश लाइन से काटें</span>
-                      </span>
+                    {/* 3. Name underneath */}
+                    <div className="text-[11px] font-bold text-slate-800 mt-1 leading-tight line-clamp-2 px-0.5">
+                      {p.name}
                     </div>
                   </div>
                 ))}
@@ -212,8 +192,8 @@ export default function BulkPrintSheetPage() {
                   (_, emptyIdx) => (
                     <div
                       key={`empty-${emptyIdx}`}
-                      className="border border-dashed border-slate-200 rounded-xl"
-                      style={{ minHeight: '62mm' }}
+                      className="border border-dashed border-slate-200 rounded-lg"
+                      style={{ minHeight: '50mm', maxHeight: '54mm' }}
                     />
                   )
                 )}

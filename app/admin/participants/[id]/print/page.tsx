@@ -68,15 +68,8 @@ export default function PrintPage() {
 
       {/* The Printable Card */}
       <div className="bg-white border-2 border-slate-900 rounded-3xl p-8 max-w-sm w-full text-center shadow-xl print:shadow-none print:border-slate-800 print:rounded-2xl">
-        {/* Count Number Badge */}
-        <div className="mb-5">
-          <span className="font-mono text-lg font-black px-5 py-2 rounded-xl bg-orange-100 text-orange-950 border border-orange-300 inline-block">
-            काउंट नंबर: #{participant.countNumber ?? participant.participantId}
-          </span>
-        </div>
-
-        {/* QR Code */}
-        <div className="p-4 bg-white rounded-2xl border-2 border-slate-300 inline-block shadow-xs mb-5">
+        {/* 1. QR Code */}
+        <div className="p-4 bg-white rounded-2xl border-2 border-slate-300 inline-block shadow-xs mb-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={qrDataUrl}
@@ -85,11 +78,15 @@ export default function PrintPage() {
           />
         </div>
 
-        {/* Kanya Ka Naam */}
-        <div className="border-t border-slate-200 pt-4">
-          <p className="text-xs uppercase tracking-wider text-slate-400 font-bold mb-1">
-            कन्या का नाम
-          </p>
+        {/* 2. Count Number */}
+        <div className="mb-2">
+          <span className="font-mono text-xl font-black px-4 py-1.5 rounded-xl bg-orange-100 text-orange-950 border border-orange-300 inline-block">
+            #{participant.countNumber ?? participant.participantId}
+          </span>
+        </div>
+
+        {/* 3. Kanya Ka Naam */}
+        <div className="mt-2">
           <h2 className="text-2xl font-black text-slate-900">
             {participant.name}
           </h2>
