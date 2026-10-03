@@ -16,8 +16,8 @@ import {
 interface ParticipantWithQR {
   _id: string
   participantId: string
+  countNumber?: number
   name: string
-  fatherName: string
   qrToken: string
   qrDataUrl?: string
 }
@@ -62,8 +62,8 @@ export default function BulkPrintSheetPage() {
     const term = search.toLowerCase()
     return (
       p.name.toLowerCase().includes(term) ||
-      p.fatherName.toLowerCase().includes(term) ||
-      p.participantId.toLowerCase().includes(term)
+      p.participantId.toLowerCase().includes(term) ||
+      (p.countNumber && String(p.countNumber).includes(term))
     )
   })
 
@@ -163,49 +163,42 @@ export default function BulkPrintSheetPage() {
                     className="border-2 border-dashed border-slate-300 print:border-slate-400 rounded-xl p-3 flex flex-col justify-between bg-white relative"
                     style={{ minHeight: '62mm' }}
                   >
-                    {/* Header */}
-                    <div className="flex items-center justify-between border-b border-orange-100 pb-1 mb-1">
-                      <span className="text-[11px] font-bold text-orange-600 tracking-wider uppercase flex items-center gap-1">
-                        <Flame className="w-3 h-3 text-orange-500" />
-                        <span>Navratri 2026</span>
+                    {/* Header: Count Number */}
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-1.5 mb-1.5">
+                      <span className="text-xs font-mono font-black bg-orange-100 text-orange-950 px-2.5 py-0.5 rounded border border-orange-200">
+                        काउंट नंबर: #{p.countNumber ?? p.participantId}
                       </span>
-                      <span className="text-[11px] font-mono font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded">
+                      <span className="text-[10px] font-mono text-slate-400">
                         {p.participantId}
                       </span>
                     </div>
 
-                    {/* Body */}
-                    <div className="flex items-center gap-3 my-auto">
+                    {/* Body: Large QR + Kanya Ka Naam */}
+                    <div className="flex items-center gap-3.5 my-auto">
                       {p.qrDataUrl ? (
                         /* eslint-disable-next-line @next/next/no-img-element */
                         <img
                           src={p.qrDataUrl}
                           alt={`QR for ${p.name}`}
-                          className="w-24 h-24 shrink-0 rounded-lg border border-slate-100 p-0.5"
+                          className="w-24 h-24 shrink-0 rounded-lg border border-slate-200 p-0.5"
                         />
                       ) : (
                         <div className="w-24 h-24 bg-slate-50 rounded-lg shrink-0 animate-pulse" />
                       )}
 
                       <div className="flex-1 min-w-0 pr-1">
-                        <h2 className="text-sm font-bold text-slate-900 leading-tight truncate">
+                        <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                          कन्या का नाम
+                        </p>
+                        <h2 className="text-base font-black text-slate-900 leading-tight mt-0.5">
                           {p.name}
                         </h2>
-                        <p className="text-[11px] text-slate-500 mt-1 font-medium leading-snug">
-                          पिता:
-                        </p>
-                        <p className="text-xs font-semibold text-slate-800 truncate">
-                          {p.fatherName}
-                        </p>
-                        <p className="text-[10px] text-slate-400 mt-1.5 leading-tight font-medium">
-                          दैनिक वितरण पास
-                        </p>
                       </div>
                     </div>
 
                     {/* Footer / Cut Marker */}
                     <div className="border-t border-slate-100 pt-1 flex justify-between items-center text-[9px] text-slate-400 font-mono">
-                      <span>★ ९-दिवसीय सामग्री पास</span>
+                      <span>★ पास</span>
                       <span className="flex items-center gap-0.5">
                         <Scissors className="w-2.5 h-2.5 text-slate-400" />
                         <span>डैश लाइन से काटें</span>

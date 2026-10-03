@@ -67,57 +67,33 @@ export default function PrintPage() {
       </div>
 
       {/* The Printable Card */}
-      <div className="bg-white border-2 border-orange-400/80 rounded-3xl p-8 max-w-sm w-full text-center shadow-xl shadow-slate-200/50 print:shadow-none print:border-slate-800 print:rounded-2xl">
-        <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-orange-50 border border-orange-100 text-orange-600 mb-2">
-          <Flame className="w-5 h-5 fill-orange-500/20" />
+      <div className="bg-white border-2 border-slate-900 rounded-3xl p-8 max-w-sm w-full text-center shadow-xl print:shadow-none print:border-slate-800 print:rounded-2xl">
+        {/* Count Number Badge */}
+        <div className="mb-5">
+          <span className="font-mono text-lg font-black px-5 py-2 rounded-xl bg-orange-100 text-orange-950 border border-orange-300 inline-block">
+            काउंट नंबर: #{participant.countNumber ?? participant.participantId}
+          </span>
         </div>
 
-        <h1 className="text-xl font-bold tracking-tight text-slate-900">
-          NAVRATRI 2026
-        </h1>
-        <p className="text-xs uppercase tracking-widest font-semibold text-orange-600 mt-0.5 mb-6">
-          दैनिक वितरण पास (Daily Pass)
-        </p>
-
         {/* QR Code */}
-        <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 inline-block shadow-xs mb-5">
+        <div className="p-4 bg-white rounded-2xl border-2 border-slate-300 inline-block shadow-xs mb-5">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={qrDataUrl}
             alt="QR Code"
-            className="w-48 h-48 mx-auto rounded-xl"
+            className="w-52 h-52 mx-auto rounded-lg"
           />
         </div>
 
-        {/* Participant Details */}
-        <div className="border-t border-slate-100 pt-4">
-          <h2 className="text-xl font-bold text-slate-900">
+        {/* Kanya Ka Naam */}
+        <div className="border-t border-slate-200 pt-4">
+          <p className="text-xs uppercase tracking-wider text-slate-400 font-bold mb-1">
+            कन्या का नाम
+          </p>
+          <h2 className="text-2xl font-black text-slate-900">
             {participant.name}
           </h2>
-          <div className="text-xs text-slate-600 mt-1 font-medium space-y-0.5">
-            {participant.motherName && <p>माता: {participant.motherName}</p>}
-            <p>पिता: {participant.fatherName}</p>
-          </div>
-          <div className="mt-2.5 flex items-center justify-center gap-2">
-            <span className="font-mono text-xs font-bold px-3 py-1 rounded-md bg-slate-100 text-slate-800">
-              {participant.participantId}
-            </span>
-            {participant.countNumber && (
-              <span className="font-mono text-xs font-bold px-2.5 py-1 rounded-md bg-orange-100 text-orange-800">
-                #{participant.countNumber}
-              </span>
-            )}
-            {participant.category && (
-              <span className="text-xs uppercase font-bold px-2 py-1 rounded-md bg-blue-100 text-blue-800">
-                {participant.category}
-              </span>
-            )}
-          </div>
         </div>
-
-        <p className="text-[11px] text-slate-500 mt-6 leading-relaxed">
-          कृपया प्रतिदिन वितरण काउंटर पर यह QR पास दिखाएं।
-        </p>
       </div>
     </div>
   )
