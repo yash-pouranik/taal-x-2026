@@ -79,13 +79,13 @@ export default function BulkImportPage() {
         }
 
         return {
-          countNumber: getVal(['count number', 'count', 'countNumber', 'id', 'क्रमांक']) || '-',
-          name: getVal(['kanya', 'kanya ka naam', 'name', 'bachi', 'बच्ची का नाम', 'कन्या']),
-          fatherName: getVal(['pita ka nam', 'pita ka naam', 'pita', 'fatherName', 'पिता का नाम']),
-          motherName: getVal(['mata ka naam', 'mata ka nam', 'mata', 'motherName', 'माता का नाम']),
-          phone: getVal(['number', 'phone', 'mobile', 'फोन नंबर']),
-          address: getVal(['pata', 'address', 'पता']),
-          category: getVal(['category', 'catagory', 'वर्ग']) || null,
+          countNumber: getVal(['count number', 'count number as id', 'count', 'countNumber', 'id', 'क्रमांक', 'काउंट नंबर', 'क्रमांक संख्या']) || '-',
+          name: getVal(['kanya', 'kanya ka naam', 'kanya naam', 'name', 'bachi', 'bachi ka naam', 'girl', 'girl name', 'बच्ची का नाम', 'कन्या', 'नाम']),
+          fatherName: getVal(['pita ka nam', 'pita ka naam', 'pita', 'pita ji', 'pitaji', 'father', 'father name', 'fatherName', 'पिता का नाम', 'पिता', 'पिताजी']),
+          motherName: getVal(['mata ka naam', 'mata ka nam', 'mata', 'mata ji', 'mataji', 'mother', 'mother name', 'motherName', 'माता का नाम', 'माता', 'माताजी']),
+          phone: getVal(['number', 'phone', 'mobile', 'contact', 'phone number', 'mobile number', 'फोन नंबर', 'मोबाइल', 'नंबर', 'फ़ोन', 'फोन']),
+          address: getVal(['pata', 'address', 'city', 'location', 'पता']),
+          category: getVal(['category', 'catagory', 'वर्ग', 'जाति', 'श्रेणी']) || null,
         }
       })
 
