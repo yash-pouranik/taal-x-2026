@@ -9,6 +9,11 @@ import {
   Download,
   UserPlus,
   User,
+  Heart,
+  Phone,
+  MapPin,
+  Tag,
+  Hash,
   AlertCircle,
   Loader2,
   Printer,
@@ -17,13 +22,24 @@ import {
 
 export default function RegisterParticipantPage() {
   const [name, setName] = useState('')
+  const [motherName, setMotherName] = useState('')
   const [fatherName, setFatherName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [address, setAddress] = useState('')
+  const [countNumber, setCountNumber] = useState('')
+  const [category, setCategory] = useState<'general' | 'obc' | 'sc' | 'st'>('general')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState<{
     _id: string
     participantId: string
+    countNumber?: number
     name: string
+    motherName?: string
+    fatherName: string
+    phone?: string
+    address?: string
+    category?: string
     rawToken: string
     dataUrl: string
   } | null>(null)
@@ -31,12 +47,26 @@ export default function RegisterParticipantPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+
+    if (phone.trim() && !/^\d{10}$/.test(phone.trim().replace(/\D/g, ''))) {
+      setError('कृपया सही 10 अंकों का मोबाइल नंबर दर्ज करें।')
+      return
+    }
+
     setLoading(true)
     try {
       const res = await fetch('/api/participants', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, fatherName }),
+        body: JSON.stringify({
+          name: name.trim(),
+          motherName: motherName.trim(),
+          fatherName: fatherName.trim(),
+          phone: phone.trim(),
+          address: address.trim(),
+          countNumber: countNumber ? Number(countNumber) : undefined,
+          category,
+        }),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -54,7 +84,13 @@ export default function RegisterParticipantPage() {
       setSuccess({
         _id: data.participant._id,
         participantId: data.participant.participantId,
+        countNumber: data.participant.countNumber,
         name: data.participant.name,
+        motherName: data.participant.motherName,
+        fatherName: data.participant.fatherName,
+        phone: data.participant.phone,
+        address: data.participant.address,
+        category: data.participant.category,
         rawToken: qrData.rawToken,
         dataUrl: qrData.dataUrl,
       })
@@ -63,6 +99,24 @@ export default function RegisterParticipantPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  function handleReset() {
+    setSuccess(null)
+    setName('')
+    setMotherName('')
+    setFatherName('')
+    setPhone('')
+    setAddress('')
+    setCountNumber('')
+    setCategory('general')
+  }
+
+  const categoryLabel: Record<string, string> = {
+    general: 'सामान्य (General)',
+    obc: 'अन्य पिछड़ा वर्ग (OBC)',
+    sc: 'अनुसूचित जाति (SC)',
+    st: 'अनुसूचित जनजाति (ST)',
   }
 
   return (
@@ -82,7 +136,7 @@ export default function RegisterParticipantPage() {
             नया प्रतिभागी पंजीकरण
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            प्रतिभागी का नाम और पिता का नाम दर्ज करें। तुरंत एक विशिष्ट QR कोड जनरेट होगा।
+            बच्ची एवं अभिभावक का विवरण दर्ज करें। तुरंत एक विशिष्ट QR कोड जनरेट होगा।
           </p>
         </div>
 
@@ -92,16 +146,37 @@ export default function RegisterParticipantPage() {
               <CheckCircle2 className="w-8 h-8" />
             </div>
 
-            <span className="font-mono text-xs font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700">
-              {success.participantId}
-            </span>
+            <div className="flex items-center justify-center gap-2 mb-1">
+              <span className="font-mono text-xs font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700">
+                {success.participantId}
+              </span>
+              {success.countNumber && (
+                <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-orange-100 text-orange-800">
+                  क्रमांक: #{success.countNumber}
+                </span>
+              )}
+              {success.category && (
+                <span className="text-xs uppercase font-bold px-2.5 py-1 rounded-full bg-blue-100 text-blue-800">
+                  {success.category}
+                </span>
+              )}
+            </div>
 
             <h2 className="text-2xl font-bold text-slate-900 mt-2">
               {success.name}
             </h2>
-            <p className="text-xs text-slate-500 mt-1">
-              सफलतापूर्वक पंजीकृत हुआ! QR कोड तैयार और सुरक्षित है।
-            </p>
+            <div className="text-xs text-slate-500 mt-1 space-y-0.5">
+              <p>
+                {success.motherName && <span>माता: <strong className="text-slate-700">{success.motherName}</strong> | </span>}
+                पिता: <strong className="text-slate-700">{success.fatherName}</strong>
+              </p>
+              {success.phone && (
+                <p>मोबाइल: <strong className="text-slate-700 font-mono">{success.phone}</strong></p>
+              )}
+              {success.address && (
+                <p>पता: <strong className="text-slate-700">{success.address}</strong></p>
+              )}
+            </div>
 
             <div className="my-6 p-4 bg-slate-50 rounded-2xl border border-slate-100 inline-block">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -129,11 +204,7 @@ export default function RegisterParticipantPage() {
                 <span>QR डाउनलोड करें</span>
               </a>
               <button
-                onClick={() => {
-                  setSuccess(null)
-                  setName('')
-                  setFatherName('')
-                }}
+                onClick={handleReset}
                 className="inline-flex items-center justify-center gap-2 border border-slate-200 hover:bg-slate-50 text-slate-700 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all"
               >
                 <UserPlus className="w-4 h-4" />
@@ -143,10 +214,11 @@ export default function RegisterParticipantPage() {
           </div>
         ) : (
           <div className="bg-white rounded-3xl shadow-sm border border-slate-200/80 p-6 sm:p-10">
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {/* Bachi Ka Naam */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
-                  प्रतिभागी का पूरा नाम *
+                  बच्ची का नाम (Bachi Ka Naam) *
                 </label>
                 <div className="relative">
                   <User className="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -161,20 +233,116 @@ export default function RegisterParticipantPage() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
-                  पिता / अभिभावक का नाम *
-                </label>
-                <div className="relative">
-                  <User className="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                  <input
-                    type="text"
-                    value={fatherName}
-                    onChange={(e) => setFatherName(e.target.value)}
-                    required
-                    className="w-full pl-11 pr-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all placeholder:text-slate-400"
-                    placeholder="उदा. रमेश शर्मा"
-                  />
+              {/* Parents: Mata Ji & Pita Ji (2 Columns) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+                    माता जी का नाम (Mata Ji Name) *
+                  </label>
+                  <div className="relative">
+                    <Heart className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      type="text"
+                      value={motherName}
+                      onChange={(e) => setMotherName(e.target.value)}
+                      required
+                      className="w-full pl-11 pr-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all placeholder:text-slate-400"
+                      placeholder="उदा. सुनीता शर्मा"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+                    पिता जी का नाम (Pita Ji Name) *
+                  </label>
+                  <div className="relative">
+                    <User className="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      type="text"
+                      value={fatherName}
+                      onChange={(e) => setFatherName(e.target.value)}
+                      required
+                      className="w-full pl-11 pr-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all placeholder:text-slate-400"
+                      placeholder="उदा. रमेश शर्मा"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Phone & Category (2 Columns) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+                    फोन नंबर (Phone Number) *
+                  </label>
+                  <div className="relative">
+                    <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      required
+                      maxLength={10}
+                      className="w-full pl-11 pr-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all placeholder:text-slate-400 font-mono"
+                      placeholder="9876543210"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+                    श्रेणी / वर्ग (Category) *
+                  </label>
+                  <div className="relative">
+                    <Tag className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <select
+                      value={category}
+                      onChange={(e) => setCategory(e.target.value as 'general' | 'obc' | 'sc' | 'st')}
+                      required
+                      className="w-full pl-11 pr-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all appearance-none cursor-pointer"
+                    >
+                      <option value="general">सामान्य (General)</option>
+                      <option value="obc">अन्य पिछड़ा वर्ग (OBC)</option>
+                      <option value="sc">अनुसूचित जाति (SC)</option>
+                      <option value="st">अनुसूचित जनजाति (ST)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Count Number & Address (2 Columns) */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="sm:col-span-1">
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+                    काउंट नंबर (Count No.)
+                  </label>
+                  <div className="relative">
+                    <Hash className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      type="number"
+                      value={countNumber}
+                      onChange={(e) => setCountNumber(e.target.value)}
+                      className="w-full pl-11 pr-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all placeholder:text-slate-400 font-mono"
+                      placeholder="स्वतः सेट"
+                    />
+                  </div>
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+                    पता (Address)
+                  </label>
+                  <div className="relative">
+                    <MapPin className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      type="text"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      className="w-full pl-11 pr-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all placeholder:text-slate-400"
+                      placeholder="मोहल्ला, वार्ड, या शहर का नाम"
+                    />
+                  </div>
                 </div>
               </div>
 

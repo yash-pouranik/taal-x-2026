@@ -14,11 +14,16 @@ export async function GET() {
   const participants = await Participant.find().sort({ participantId: 1 })
 
   const rows = [
-    ['Participant ID', 'Name', 'Father Name', 'Registration Date'],
+    ['Participant ID', 'Count Number', 'Bachi Ka Naam', 'Mata Ji Name', 'Pita Ji Name', 'Phone', 'Category', 'Address', 'Registration Date'],
     ...participants.map(p => [
       p.participantId,
+      p.countNumber ?? '',
       p.name,
+      p.motherName || '',
       p.fatherName,
+      p.phone || '',
+      (p.category || 'general').toUpperCase(),
+      p.address || '',
       new Date(p.createdAt).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' }),
     ]),
   ]

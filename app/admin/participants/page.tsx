@@ -15,8 +15,13 @@ import {
 interface Participant {
   _id: string
   participantId: string
+  countNumber?: number
   name: string
+  motherName?: string
   fatherName: string
+  phone?: string
+  address?: string
+  category?: 'general' | 'obc' | 'sc' | 'st'
   status?: 'active' | 'cancelled'
   createdAt: string
 }
@@ -103,18 +108,19 @@ export default function ParticipantsPage() {
             <table className="w-full text-left border-collapse text-sm">
               <thead>
                 <tr className="bg-slate-50/80 border-b border-slate-200/80 text-xs font-semibold uppercase tracking-wider text-slate-500">
-                  <th className="px-6 py-3.5">आईडी</th>
-                  <th className="px-6 py-3.5">प्रतिभागी का नाम</th>
-                  <th className="px-6 py-3.5">पिता / अभिभावक</th>
-                  <th className="px-6 py-3.5">स्थिति</th>
-                  <th className="px-6 py-3.5">पंजीकरण तिथि</th>
-                  <th className="px-6 py-3.5 text-right">कार्य</th>
+                  <th className="px-5 py-3.5">आईडी / क्रमांक</th>
+                  <th className="px-5 py-3.5">बच्ची का नाम</th>
+                  <th className="px-5 py-3.5">माता व पिता</th>
+                  <th className="px-5 py-3.5">मोबाइल व पता</th>
+                  <th className="px-5 py-3.5">स्थिति</th>
+                  <th className="px-5 py-3.5">पंजीकरण</th>
+                  <th className="px-5 py-3.5 text-right">कार्य</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="text-center py-16 text-slate-400">
+                    <td colSpan={7} className="text-center py-16 text-slate-400">
                       <div className="inline-flex items-center gap-2">
                         <Loader2 className="w-5 h-5 animate-spin text-orange-500" />
                         <span>प्रतिभागी खोजे जा रहे हैं...</span>
@@ -123,7 +129,7 @@ export default function ParticipantsPage() {
                   </tr>
                 ) : participants.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="text-center py-16 text-slate-400">
+                    <td colSpan={7} className="text-center py-16 text-slate-400">
                       कोई प्रतिभागी नहीं मिला।
                     </td>
                   </tr>
@@ -139,37 +145,78 @@ export default function ParticipantsPage() {
                             : 'hover:bg-slate-50/60'
                         }`}
                       >
-                        <td className="px-6 py-4">
-                          <span
-                            className={`font-mono text-xs font-bold px-2 py-0.5 rounded ${
-                              isCancelled
-                                ? 'bg-red-100 text-red-700'
-                                : 'bg-slate-100 text-slate-700'
-                            }`}
-                          >
-                            {p.participantId}
-                          </span>
+                        {/* ID & Count Number */}
+                        <td className="px-5 py-3.5">
+                          <div className="flex flex-col gap-0.5">
+                            <span
+                              className={`font-mono text-xs font-bold px-2 py-0.5 rounded w-fit ${
+                                isCancelled
+                                  ? 'bg-red-100 text-red-700'
+                                  : 'bg-slate-100 text-slate-700'
+                              }`}
+                            >
+                              {p.participantId}
+                            </span>
+                            {p.countNumber && (
+                              <span className="text-[11px] font-semibold text-slate-500 font-mono">
+                                #{p.countNumber}
+                              </span>
+                            )}
+                          </div>
                         </td>
-                        <td className="px-6 py-4">
-                          <span
-                            className={`font-semibold ${
-                              isCancelled
-                                ? 'text-slate-500 line-through'
-                                : 'text-slate-900'
-                            }`}
-                          >
-                            {p.name}
-                          </span>
+
+                        {/* Girl's Name & Category */}
+                        <td className="px-5 py-3.5">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span
+                              className={`font-semibold ${
+                                isCancelled
+                                  ? 'text-slate-500 line-through'
+                                  : 'text-slate-900'
+                              }`}
+                            >
+                              {p.name}
+                            </span>
+                            {p.category && (
+                              <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+                                {p.category}
+                              </span>
+                            )}
+                          </div>
                         </td>
-                        <td className="px-6 py-4 text-slate-600">
-                          <span className="text-xs text-slate-400 mr-1.5 font-normal">
-                            पिता:
-                          </span>
-                          {p.fatherName}
+
+                        {/* Mother & Father */}
+                        <td className="px-5 py-3.5 text-xs text-slate-600">
+                          {p.motherName && (
+                            <div className="text-slate-700">
+                              <span className="text-slate-400 mr-1">माता:</span>
+                              {p.motherName}
+                            </div>
+                          )}
+                          <div className="text-slate-700">
+                            <span className="text-slate-400 mr-1">पिता:</span>
+                            {p.fatherName}
+                          </div>
                         </td>
-                        <td className="px-6 py-4">
+
+                        {/* Phone & Address */}
+                        <td className="px-5 py-3.5 text-xs text-slate-600">
+                          {p.phone && (
+                            <div className="font-mono text-slate-800 font-medium">
+                              {p.phone}
+                            </div>
+                          )}
+                          {p.address && (
+                            <div className="text-[11px] text-slate-500 truncate max-w-[160px]" title={p.address}>
+                              {p.address}
+                            </div>
+                          )}
+                        </td>
+
+                        {/* Status */}
+                        <td className="px-5 py-3.5">
                           <span
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${
                               isCancelled
                                 ? 'bg-red-100 text-red-700 border border-red-200'
                                 : 'bg-emerald-50 text-emerald-700 border border-emerald-200'

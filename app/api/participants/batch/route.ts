@@ -27,8 +27,13 @@ export async function GET() {
       return {
         _id: p._id.toString(),
         participantId: p.participantId,
+        countNumber: p.countNumber,
         name: p.name,
+        motherName: p.motherName,
         fatherName: p.fatherName,
+        phone: p.phone,
+        address: p.address,
+        category: p.category,
         qrToken: p.qrToken,
       }
     })

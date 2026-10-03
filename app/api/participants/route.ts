@@ -20,7 +20,10 @@ export async function GET(req: NextRequest) {
     query = {
       $or: [
         { name: { $regex: q, $options: 'i' } },
+        { motherName: { $regex: q, $options: 'i' } },
         { fatherName: { $regex: q, $options: 'i' } },
+        { phone: { $regex: q, $options: 'i' } },
+        { address: { $regex: q, $options: 'i' } },
         { participantId: { $regex: q, $options: 'i' } },
       ],
     }
@@ -42,15 +45,32 @@ export async function POST(req: NextRequest) {
 
   await connectDB()
   const body = await req.json()
-  const { name, fatherName } = body
+  const { name, motherName, fatherName, phone, address, countNumber, category } = body
 
-  if (!name?.trim() || !fatherName?.trim()) {
-    return NextResponse.json({ error: 'Name and father name are required' }, { status: 400 })
+  if (!name?.trim()) {
+    return NextResponse.json({ error: 'बच्ची का नाम आवश्यक है (Name is required)' }, { status: 400 })
+  }
+  if (!motherName?.trim()) {
+    return NextResponse.json({ error: 'माता जी का नाम आवश्यक है (Mother name is required)' }, { status: 400 })
+  }
+  if (!fatherName?.trim()) {
+    return NextResponse.json({ error: 'पिता जी का नाम आवश्यक है (Father name is required)' }, { status: 400 })
+  }
+  if (!phone?.trim()) {
+    return NextResponse.json({ error: 'फोन नंबर आवश्यक है (Phone number is required)' }, { status: 400 })
   }
 
-  // Generate sequential participant ID
+  const validCategories = ['general', 'obc', 'sc', 'st']
+  const selectedCategory = validCategories.includes(String(category).toLowerCase())
+    ? String(category).toLowerCase()
+    : 'general'
+
+  // Generate sequential participant ID and countNumber
   const count = await Participant.countDocuments()
   const participantId = `NAV-${String(count + 1).padStart(3, '0')}`
+  const finalCountNumber = countNumber !== undefined && countNumber !== null && String(countNumber).trim() !== ''
+    ? Number(countNumber)
+    : count + 1
 
   // Generate QR token
   const rawToken = generateQRToken()
@@ -58,8 +78,13 @@ export async function POST(req: NextRequest) {
 
   const participant = new Participant({
     participantId,
+    countNumber: isNaN(finalCountNumber) ? count + 1 : finalCountNumber,
     name: name.trim(),
+    motherName: motherName.trim(),
     fatherName: fatherName.trim(),
+    phone: phone.trim(),
+    address: address?.trim() || '',
+    category: selectedCategory,
     qrToken: rawToken,
     qrTokenHash,
   })

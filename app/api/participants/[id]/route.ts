@@ -109,15 +109,31 @@ export async function PUT(
 
   await connectDB()
   const body = await req.json()
-  const { name, fatherName } = body
+  const { name, motherName, fatherName, phone, address, countNumber, category } = body
 
   if (!name?.trim() || !fatherName?.trim()) {
     return NextResponse.json({ error: 'Name and father name are required' }, { status: 400 })
   }
 
+  const updateData: Record<string, unknown> = {
+    name: name.trim(),
+    fatherName: fatherName.trim(),
+  }
+
+  if (motherName !== undefined) updateData.motherName = motherName.trim()
+  if (phone !== undefined) updateData.phone = phone.trim()
+  if (address !== undefined) updateData.address = address.trim()
+  if (countNumber !== undefined && countNumber !== '') updateData.countNumber = Number(countNumber)
+  if (category !== undefined) {
+    const validCategories = ['general', 'obc', 'sc', 'st']
+    updateData.category = validCategories.includes(String(category).toLowerCase())
+      ? String(category).toLowerCase()
+      : 'general'
+  }
+
   const participant = await Participant.findByIdAndUpdate(
     params.id,
-    { name: name.trim(), fatherName: fatherName.trim() },
+    updateData,
     { new: true }
   ).select('-qrTokenHash')
 

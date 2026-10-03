@@ -7,8 +7,13 @@ import { Printer, ArrowLeft, Flame, Loader2 } from 'lucide-react'
 
 interface Participant {
   participantId: string
+  countNumber?: number
   name: string
+  motherName?: string
   fatherName: string
+  phone?: string
+  address?: string
+  category?: string
 }
 
 export default function PrintPage() {
@@ -89,13 +94,24 @@ export default function PrintPage() {
           <h2 className="text-xl font-bold text-slate-900">
             {participant.name}
           </h2>
-          <p className="text-xs text-slate-600 mt-1 font-medium">
-            पिता: {participant.fatherName}
-          </p>
-          <div className="mt-2.5 inline-block">
+          <div className="text-xs text-slate-600 mt-1 font-medium space-y-0.5">
+            {participant.motherName && <p>माता: {participant.motherName}</p>}
+            <p>पिता: {participant.fatherName}</p>
+          </div>
+          <div className="mt-2.5 flex items-center justify-center gap-2">
             <span className="font-mono text-xs font-bold px-3 py-1 rounded-md bg-slate-100 text-slate-800">
               {participant.participantId}
             </span>
+            {participant.countNumber && (
+              <span className="font-mono text-xs font-bold px-2.5 py-1 rounded-md bg-orange-100 text-orange-800">
+                #{participant.countNumber}
+              </span>
+            )}
+            {participant.category && (
+              <span className="text-xs uppercase font-bold px-2 py-1 rounded-md bg-blue-100 text-blue-800">
+                {participant.category}
+              </span>
+            )}
           </div>
         </div>
 

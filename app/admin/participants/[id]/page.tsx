@@ -56,8 +56,13 @@ interface DayGrid {
 interface Participant {
   _id: string
   participantId: string
+  countNumber?: number
   name: string
+  motherName?: string
   fatherName: string
+  phone?: string
+  address?: string
+  category?: 'general' | 'obc' | 'sc' | 'st'
   status?: 'active' | 'cancelled'
   cancelledAt?: string
   createdAt: string
@@ -329,10 +334,20 @@ export default function ParticipantDetailPage() {
             <div className="bg-white rounded-3xl shadow-xs border border-slate-200/80 p-6 sm:p-7">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <div className="flex items-center gap-2.5">
+                  <div className="flex items-center gap-2.5 flex-wrap">
                     <span className="font-mono text-xs font-bold px-2.5 py-0.5 rounded-md bg-orange-100 text-orange-800">
                       {participant.participantId}
                     </span>
+                    {participant.countNumber && (
+                      <span className="font-mono text-xs font-bold px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-800">
+                        क्रमांक: #{participant.countNumber}
+                      </span>
+                    )}
+                    {participant.category && (
+                      <span className="text-xs uppercase font-bold px-2.5 py-0.5 rounded-md bg-blue-100 text-blue-800">
+                        {participant.category}
+                      </span>
+                    )}
                     <span className="text-xs text-slate-400">
                       पंजीकरण तिथि:{' '}
                       {new Date(participant.createdAt).toLocaleDateString('en-IN', {
@@ -349,10 +364,31 @@ export default function ParticipantDetailPage() {
                   >
                     {participant.name}
                   </h1>
-                  <p className="text-sm font-medium text-slate-600 mt-1 flex items-center gap-1.5">
-                    <span className="text-slate-400">पिता / अभिभावक:</span>
-                    <span className="text-slate-800">{participant.fatherName}</span>
-                  </p>
+
+                  <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 text-xs">
+                    {participant.motherName && (
+                      <p className="font-medium text-slate-600 flex items-center gap-1.5">
+                        <span className="text-slate-400">माता जी:</span>
+                        <span className="text-slate-800 font-semibold">{participant.motherName}</span>
+                      </p>
+                    )}
+                    <p className="font-medium text-slate-600 flex items-center gap-1.5">
+                      <span className="text-slate-400">पिता जी:</span>
+                      <span className="text-slate-800 font-semibold">{participant.fatherName}</span>
+                    </p>
+                    {participant.phone && (
+                      <p className="font-medium text-slate-600 flex items-center gap-1.5">
+                        <span className="text-slate-400">मोबाइल:</span>
+                        <span className="text-slate-800 font-mono font-semibold">{participant.phone}</span>
+                      </p>
+                    )}
+                    {participant.address && (
+                      <p className="font-medium text-slate-600 flex items-center gap-1.5">
+                        <span className="text-slate-400">पता:</span>
+                        <span className="text-slate-800">{participant.address}</span>
+                      </p>
+                    )}
+                  </div>
                 </div>
 
                 {!isCancelled && (

@@ -29,7 +29,12 @@ interface VerifyResult {
   participant: {
     _id: string
     name: string
+    motherName?: string
     fatherName: string
+    phone?: string
+    address?: string
+    category?: string
+    countNumber?: number
     participantId: string
   }
   navratriDay: number
@@ -352,14 +357,31 @@ export default function ScannerPage() {
               <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
                 {verifyData.participant.name}
               </h2>
-              <p className="text-sm font-medium text-slate-300 mt-1">
-                पिता / अभिभावक: <strong className="text-white">{verifyData.participant.fatherName}</strong>
-              </p>
+              <div className="flex items-center gap-2 flex-wrap mt-1 text-sm font-medium text-slate-300">
+                {verifyData.participant.motherName && (
+                  <span>माता: <strong className="text-white">{verifyData.participant.motherName}</strong> • </span>
+                )}
+                <span>पिता: <strong className="text-white">{verifyData.participant.fatherName}</strong></span>
+                {verifyData.participant.phone && (
+                  <span className="text-slate-400 font-mono text-xs">📞 {verifyData.participant.phone}</span>
+                )}
+                {verifyData.participant.category && (
+                  <span className="uppercase text-[10px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 font-bold border border-blue-500/30">
+                    {verifyData.participant.category}
+                  </span>
+                )}
+              </div>
 
-              <div className="mt-2 flex flex-wrap items-center gap-2">
+              <div className="mt-2.5 flex flex-wrap items-center gap-2">
                 <span className="font-mono text-xs font-bold px-2.5 py-0.5 rounded bg-slate-800 text-slate-300">
                   {verifyData.participant.participantId}
                 </span>
+
+                {verifyData.participant.countNumber && (
+                  <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-orange-500/20 text-orange-300 border border-orange-500/30">
+                    #{verifyData.participant.countNumber}
+                  </span>
+                )}
 
                 {verifyData.entryTime && (
                   <span className="text-[11px] text-slate-400 font-mono">
