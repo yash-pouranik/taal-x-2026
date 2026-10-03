@@ -28,27 +28,79 @@ export default function ConfigPage() {
 
   // Hidden Danger Zone States
   const [dangerOpen, setDangerOpen] = useState(false)
+  const [deleteMode, setDeleteMode] = useState<'range' | 'all'>('range')
+  const [deleteFromCount, setDeleteFromCount] = useState('')
+  const [deleteToCount, setDeleteToCount] = useState('')
   const [deleteConfirmText, setDeleteConfirmText] = useState('')
-  const [deletingAll, setDeletingAll] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [deleteSuccessMsg, setDeleteSuccessMsg] = useState('')
   const [deleteErrorMsg, setDeleteErrorMsg] = useState('')
 
   async function handleBulkDelete() {
-    if (deleteConfirmText !== 'DELETE ALL') return
+    setDeleteErrorMsg('')
+    setDeleteSuccessMsg('')
 
-    if (!confirm('क्या आप सचमुच सभी प्रतिभागियों और उनके उपस्थिति रिकॉर्ड्स को डेटाबेस से हमेशा के लिए मिटाना चाहते हैं? यह वापस नहीं लाया जा सकता!')) {
-      return
+    if (deleteMode === 'range') {
+      const from = Number(deleteFromCount)
+      const to = Number(deleteToCount)
+
+      if (!deleteFromCount || !deleteToCount || isNaN(from) || isNaN(to) || from <= 0 || to <= 0) {
+        setDeleteErrorMsg('कृपया मान्य शुरुआती और अंतिम क्रमांक (From / To) दर्ज करें।')
+        return
+      }
+
+      if (from > to) {
+        setDeleteErrorMsg('शुरुआती क्रमांक अंतिम क्रमांक से बड़ा नहीं हो सकता।')
+        return
+      }
+
+      if (deleteConfirmText.trim().toUpperCase() !== 'DELETE') {
+        setDeleteErrorMsg('कृपया सुरक्षा पुष्टि के लिए "DELETE" टाइप करें।')
+        return
+      }
+
+      if (
+        !confirm(
+          `क्या आप सचमुच क्रमांक #${from} से #${to} तक के प्रतिभागियों और उनके रिकॉर्ड्स को हमेशा के लिए मिटाना चाहते हैं?`
+        )
+      ) {
+        return
+      }
+    } else {
+      if (deleteConfirmText.trim() !== 'DELETE ALL') {
+        setDeleteErrorMsg('कृपया सुरक्षा पुष्टि के लिए "DELETE ALL" टाइप करें।')
+        return
+      }
+
+      if (
+        !confirm(
+          'क्या आप सचमुच सभी प्रतिभागियों और उनके उपस्थिति रिकॉर्ड्स को डेटाबेस से हमेशा के लिए मिटाना चाहते हैं? यह वापस नहीं लाया जा सकता!'
+        )
+      ) {
+        return
+      }
     }
 
-    setDeletingAll(true)
-    setDeleteSuccessMsg('')
-    setDeleteErrorMsg('')
+    setDeleting(true)
 
     try {
+      const payload =
+        deleteMode === 'range'
+          ? {
+              mode: 'range',
+              fromCount: deleteFromCount,
+              toCount: deleteToCount,
+              confirmPhrase: 'DELETE',
+            }
+          : {
+              mode: 'all',
+              confirmPhrase: 'DELETE_ALL_PARTICIPANTS',
+            }
+
       const res = await fetch('/api/admin/participants/bulk-delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ confirmPhrase: 'DELETE_ALL_PARTICIPANTS' }),
+        body: JSON.stringify(payload),
       })
 
       const data = await res.json()
@@ -59,10 +111,14 @@ export default function ConfigPage() {
 
       setDeleteSuccessMsg(data.message)
       setDeleteConfirmText('')
+      if (deleteMode === 'range') {
+        setDeleteFromCount('')
+        setDeleteToCount('')
+      }
     } catch {
       setDeleteErrorMsg('सर्वर से संपर्क करने में त्रुटि हुई।')
     } finally {
-      setDeletingAll(false)
+      setDeleting(false)
     }
   }
 
@@ -337,59 +393,186 @@ export default function ConfigPage() {
           </div>
 
           {dangerOpen && (
-            <div className="p-6 border-t border-red-100 bg-red-50/30 space-y-4 animate-in fade-in duration-150">
+            <div className="p-6 border-t border-red-100 bg-red-50/30 space-y-5 animate-in fade-in duration-150">
               <div className="text-xs text-red-800 leading-relaxed">
-                <p className="font-bold">⚠️ अत्यधिक संवेदनशील क्रिया (Irreversible Action):</p>
+                <p className="font-bold">⚠️ संवेदनशील क्रिया (Permanent Deletion):</p>
                 <p className="mt-1 text-red-700">
-                  यह क्रिया डेटाबेस से <strong>सभी पंजीकृत प्रतिभागियों और उनके स्कैन/उपस्थिति रिकॉर्ड्स को हमेशा के लिए मिटा देगी</strong>। यह क्रिया वापस नहीं ली जा सकती।
+                  हटाए गए प्रतिभागियों के प्रोफाइल और उनके सभी उपस्थिति/स्कैन रिकॉर्ड्स डेटाबेस से मिटा दिए जाएंगे।
                 </p>
               </div>
 
+              {/* Mode Toggle */}
+              <div className="flex items-center gap-2 bg-white p-1 rounded-xl border border-red-200/80 w-fit text-xs font-semibold">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDeleteMode('range')
+                    setDeleteConfirmText('')
+                    setDeleteErrorMsg('')
+                    setDeleteSuccessMsg('')
+                  }}
+                  className={`px-3 py-1.5 rounded-lg transition-all ${
+                    deleteMode === 'range'
+                      ? 'bg-red-600 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  क्रमांक रेंज चुनें (Delete Range)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDeleteMode('all')
+                    setDeleteConfirmText('')
+                    setDeleteErrorMsg('')
+                    setDeleteSuccessMsg('')
+                  }}
+                  className={`px-3 py-1.5 rounded-lg transition-all ${
+                    deleteMode === 'all'
+                      ? 'bg-red-600 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  पूरा डेटाबेस साफ़ करें (Delete All)
+                </button>
+              </div>
+
               {deleteSuccessMsg && (
-                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold">
+                <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold">
                   {deleteSuccessMsg}
                 </div>
               )}
 
               {deleteErrorMsg && (
-                <div className="p-3 rounded-xl bg-red-100 border border-red-200 text-red-800 text-xs font-semibold">
+                <div className="p-3.5 rounded-xl bg-red-100 border border-red-200 text-red-800 text-xs font-semibold">
                   {deleteErrorMsg}
                 </div>
               )}
 
-              <div className="pt-2">
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                  पुष्टि के लिए बॉक्स में <code className="bg-red-100 text-red-800 px-1.5 py-0.5 rounded font-mono font-bold">DELETE ALL</code> टाइप करें:
-                </label>
-                <input
-                  type="text"
-                  value={deleteConfirmText}
-                  onChange={(e) => setDeleteConfirmText(e.target.value)}
-                  placeholder="DELETE ALL"
-                  className="w-full sm:w-72 px-3.5 py-2 bg-white border border-red-200 rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-red-500/30 text-red-900 placeholder:text-slate-300"
-                />
-              </div>
+              {/* Range Deletion Form */}
+              {deleteMode === 'range' ? (
+                <div className="bg-white p-5 rounded-2xl border border-red-200/90 space-y-4">
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900 mb-2">
+                      किस क्रमांक से किस क्रमांक तक हटाना है?
+                    </h4>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                          शुरुआती क्रमांक (From Count Number)
+                        </label>
+                        <input
+                          type="number"
+                          placeholder="उदा. 137"
+                          value={deleteFromCount}
+                          onChange={(e) => setDeleteFromCount(e.target.value)}
+                          className="w-full sm:w-36 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
+                        />
+                      </div>
+                      <span className="hidden sm:inline text-slate-400 font-bold self-end pb-2.5">
+                        से
+                      </span>
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                          अंतिम क्रमांक (To Count Number)
+                        </label>
+                        <input
+                          type="number"
+                          placeholder="उदा. 200"
+                          value={deleteToCount}
+                          onChange={(e) => setDeleteToCount(e.target.value)}
+                          className="w-full sm:w-36 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
+                        />
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-slate-400 mt-1.5">
+                      केवल इसी रेंज के प्रतिभागी मिटाए जाएंगे। बाकी सभी प्रतिभागी सुरक्षित रहेंगे।
+                    </p>
+                  </div>
 
-              <div>
-                <button
-                  type="button"
-                  disabled={deleteConfirmText !== 'DELETE ALL' || deletingAll}
-                  onClick={handleBulkDelete}
-                  className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 disabled:bg-slate-200 disabled:text-slate-400 text-white px-5 py-2.5 rounded-xl font-bold text-xs shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed"
-                >
-                  {deletingAll ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>डेटा हटाया जा रहा है...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Trash2 className="w-4 h-4" />
-                      <span>सभी प्रतिभागियों का डेटा पूरी तरह मिटाएं</span>
-                    </>
-                  )}
-                </button>
-              </div>
+                  <div className="pt-3 border-t border-slate-100">
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                      पुष्टि के लिए बॉक्स में <code className="bg-red-100 text-red-800 px-1.5 py-0.5 rounded font-mono font-bold">DELETE</code> टाइप करें:
+                    </label>
+                    <input
+                      type="text"
+                      value={deleteConfirmText}
+                      onChange={(e) => setDeleteConfirmText(e.target.value)}
+                      placeholder="DELETE"
+                      className="w-full sm:w-72 px-3.5 py-2 bg-white border border-red-200 rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-red-500/30 text-red-900 placeholder:text-slate-300"
+                    />
+                  </div>
+
+                  <div>
+                    <button
+                      type="button"
+                      disabled={
+                        deleteConfirmText.trim().toUpperCase() !== 'DELETE' ||
+                        !deleteFromCount ||
+                        !deleteToCount ||
+                        deleting
+                      }
+                      onClick={handleBulkDelete}
+                      className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 disabled:bg-slate-200 disabled:text-slate-400 text-white px-5 py-2.5 rounded-xl font-bold text-xs shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed"
+                    >
+                      {deleting ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>डेटा हटाया जा रहा है...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Trash2 className="w-4 h-4" />
+                          <span>
+                            क्रमांक #{deleteFromCount || '?'} से #{deleteToCount || '?'} तक मिटाएं
+                          </span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* Delete All Form */
+                <div className="bg-white p-5 rounded-2xl border border-red-200/90 space-y-4">
+                  <p className="text-xs text-red-700 font-medium leading-relaxed">
+                    चेतावनी: यह विकल्प पूरे डेटाबेस को खाली कर देगा। सभी 1,000+ प्रतिभागी और उनके सभी रिकॉर्ड्स एक साथ हमेशा के लिए मिट जाएंगे।
+                  </p>
+
+                  <div className="pt-2">
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                      पुष्टि के लिए बॉक्स में <code className="bg-red-100 text-red-800 px-1.5 py-0.5 rounded font-mono font-bold">DELETE ALL</code> टाइप करें:
+                    </label>
+                    <input
+                      type="text"
+                      value={deleteConfirmText}
+                      onChange={(e) => setDeleteConfirmText(e.target.value)}
+                      placeholder="DELETE ALL"
+                      className="w-full sm:w-72 px-3.5 py-2 bg-white border border-red-200 rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-red-500/30 text-red-900 placeholder:text-slate-300"
+                    />
+                  </div>
+
+                  <div>
+                    <button
+                      type="button"
+                      disabled={deleteConfirmText.trim() !== 'DELETE ALL' || deleting}
+                      onClick={handleBulkDelete}
+                      className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 disabled:bg-slate-200 disabled:text-slate-400 text-white px-5 py-2.5 rounded-xl font-bold text-xs shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed"
+                    >
+                      {deleting ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>डेटा हटाया जा रहा है...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Trash2 className="w-4 h-4" />
+                          <span>पूरा डेटाबेस साफ़ करें (Delete All)</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
