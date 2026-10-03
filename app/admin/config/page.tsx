@@ -10,6 +10,8 @@ import {
   Save,
   Loader2,
   Clock,
+  Trash2,
+  ShieldAlert,
 } from 'lucide-react'
 
 export default function ConfigPage() {
@@ -23,6 +25,46 @@ export default function ConfigPage() {
   const [fetching, setFetching] = useState(true)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
+
+  // Hidden Danger Zone States
+  const [dangerOpen, setDangerOpen] = useState(false)
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
+  const [deletingAll, setDeletingAll] = useState(false)
+  const [deleteSuccessMsg, setDeleteSuccessMsg] = useState('')
+  const [deleteErrorMsg, setDeleteErrorMsg] = useState('')
+
+  async function handleBulkDelete() {
+    if (deleteConfirmText !== 'DELETE ALL') return
+
+    if (!confirm('क्या आप सचमुच सभी प्रतिभागियों और उनके उपस्थिति रिकॉर्ड्स को डेटाबेस से हमेशा के लिए मिटाना चाहते हैं? यह वापस नहीं लाया जा सकता!')) {
+      return
+    }
+
+    setDeletingAll(true)
+    setDeleteSuccessMsg('')
+    setDeleteErrorMsg('')
+
+    try {
+      const res = await fetch('/api/admin/participants/bulk-delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirmPhrase: 'DELETE_ALL_PARTICIPANTS' }),
+      })
+
+      const data = await res.json()
+      if (!res.ok) {
+        setDeleteErrorMsg(data.error || 'हटाने में विफलता हुई।')
+        return
+      }
+
+      setDeleteSuccessMsg(data.message)
+      setDeleteConfirmText('')
+    } catch {
+      setDeleteErrorMsg('सर्वर से संपर्क करने में त्रुटि हुई।')
+    } finally {
+      setDeletingAll(false)
+    }
+  }
 
   useEffect(() => {
     fetch('/api/config')
@@ -261,6 +303,95 @@ export default function ConfigPage() {
           <div className="leading-relaxed">
             <strong>महत्वपूर्ण सूचना:</strong> उत्सव के बीच में तिथियां बदलने से पहले के वितरण रिकॉर्ड की दिवस संख्या बदल सकती है। इसे केवल दिवस १ से पहले या आधिकारिक तिथि परिवर्तन होने पर ही बदलें।
           </div>
+        </div>
+
+        {/* Hidden Danger Zone */}
+        <div className="mt-8 border border-red-200/80 rounded-3xl bg-white overflow-hidden shadow-xs">
+          <div
+            onClick={() => {
+              setDangerOpen(!dangerOpen)
+              setDeleteConfirmText('')
+              setDeleteErrorMsg('')
+            }}
+            className="p-5 flex items-center justify-between cursor-pointer hover:bg-red-50/40 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+                <ShieldAlert className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                  गोपनीय / खतरा क्षेत्र (Danger Zone)
+                </h3>
+                <p className="text-[11px] text-slate-400">
+                  डेटाबेस रीसेट एवं सभी प्रतिभागियों को एक साथ हटाना
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-white shrink-0"
+            >
+              {dangerOpen ? 'छिपाएं' : 'खोलें'}
+            </button>
+          </div>
+
+          {dangerOpen && (
+            <div className="p-6 border-t border-red-100 bg-red-50/30 space-y-4 animate-in fade-in duration-150">
+              <div className="text-xs text-red-800 leading-relaxed">
+                <p className="font-bold">⚠️ अत्यधिक संवेदनशील क्रिया (Irreversible Action):</p>
+                <p className="mt-1 text-red-700">
+                  यह क्रिया डेटाबेस से <strong>सभी पंजीकृत प्रतिभागियों और उनके स्कैन/उपस्थिति रिकॉर्ड्स को हमेशा के लिए मिटा देगी</strong>। यह क्रिया वापस नहीं ली जा सकती।
+                </p>
+              </div>
+
+              {deleteSuccessMsg && (
+                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold">
+                  {deleteSuccessMsg}
+                </div>
+              )}
+
+              {deleteErrorMsg && (
+                <div className="p-3 rounded-xl bg-red-100 border border-red-200 text-red-800 text-xs font-semibold">
+                  {deleteErrorMsg}
+                </div>
+              )}
+
+              <div className="pt-2">
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  पुष्टि के लिए बॉक्स में <code className="bg-red-100 text-red-800 px-1.5 py-0.5 rounded font-mono font-bold">DELETE ALL</code> टाइप करें:
+                </label>
+                <input
+                  type="text"
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  placeholder="DELETE ALL"
+                  className="w-full sm:w-72 px-3.5 py-2 bg-white border border-red-200 rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-red-500/30 text-red-900 placeholder:text-slate-300"
+                />
+              </div>
+
+              <div>
+                <button
+                  type="button"
+                  disabled={deleteConfirmText !== 'DELETE ALL' || deletingAll}
+                  onClick={handleBulkDelete}
+                  className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 disabled:bg-slate-200 disabled:text-slate-400 text-white px-5 py-2.5 rounded-xl font-bold text-xs shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed"
+                >
+                  {deletingAll ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>डेटा हटाया जा रहा है...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-4 h-4" />
+                      <span>सभी प्रतिभागियों का डेटा पूरी तरह मिटाएं</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </main>
     </div>
