@@ -48,8 +48,8 @@ export default function BulkPrintSheetPage() {
           rawList.map(async (p) => {
             const qrDataUrl = await QRCode.toDataURL(p.qrToken, {
               errorCorrectionLevel: 'M',
-              margin: 1,
-              width: 350,
+              margin: 0,
+              width: 450,
               color: { dark: '#000000', light: '#FFFFFF' },
             })
             return { ...p, qrDataUrl }
@@ -250,29 +250,29 @@ export default function BulkPrintSheetPage() {
           pages.map((pageGroup, pageIndex) => (
             <div
               key={pageIndex}
-              className="a4-sheet bg-white shadow-xl print:shadow-none mb-8 print:mb-0 p-5 print:p-2 rounded-2xl print:rounded-none border border-slate-200/80 print:border-none break-after-page"
+              className="a4-sheet bg-white shadow-xl print:shadow-none mb-8 print:mb-0 p-3 sm:p-4 print:p-1.5 rounded-2xl print:rounded-none border border-slate-200/80 print:border-none break-after-page"
               style={{
                 pageBreakAfter: 'always',
-                minHeight: '270mm',
+                minHeight: '272mm',
               }}
             >
               {/* Grid: 3 cols for 12, 4 cols for 16 or 20 */}
               <div
                 className={`grid h-full ${
                   cardsPerPage === 12
-                    ? 'grid-cols-3 gap-3.5'
+                    ? 'grid-cols-3 gap-2.5 print:gap-1.5'
                     : cardsPerPage === 16
-                    ? 'grid-cols-4 gap-2.5'
-                    : 'grid-cols-4 gap-2'
+                    ? 'grid-cols-4 gap-2 print:gap-1'
+                    : 'grid-cols-4 gap-1.5 print:gap-0.5'
                 }`}
               >
                 {pageGroup.map((p) => (
                   <div
                     key={p._id}
-                    className="border border-dashed border-slate-400 p-2 rounded-lg flex flex-col items-center justify-center text-center bg-white overflow-hidden"
+                    className="border border-dashed border-slate-400 p-1 sm:p-1.5 print:p-1 rounded-lg flex flex-col items-center justify-between text-center bg-white overflow-hidden"
                     style={{
-                      minHeight: cardsPerPage === 20 ? '50mm' : '62mm',
-                      maxHeight: cardsPerPage === 20 ? '54mm' : '66mm',
+                      minHeight: cardsPerPage === 20 ? '51mm' : '65mm',
+                      maxHeight: cardsPerPage === 20 ? '53mm' : '67mm',
                     }}
                   >
                     {/* 1. QR Code */}
@@ -281,34 +281,38 @@ export default function BulkPrintSheetPage() {
                       <img
                         src={p.qrDataUrl}
                         alt={`QR for ${p.name}`}
-                        className={`object-contain shrink-0 ${
+                        className={`object-contain shrink-0 mx-auto ${
                           cardsPerPage === 12
-                            ? 'w-28 h-28 sm:w-32 sm:h-32 max-w-[38mm] max-h-[38mm]'
+                            ? 'w-full max-w-[50mm] max-h-[50mm]'
                             : cardsPerPage === 16
-                            ? 'w-24 h-24 max-w-[33mm] max-h-[33mm]'
-                            : 'w-20 h-20 max-w-[28mm] max-h-[28mm]'
+                            ? 'w-full max-w-[42mm] max-h-[42mm]'
+                            : 'w-full max-w-[35mm] max-h-[35mm]'
                         }`}
                       />
                     ) : (
                       <div className="w-24 h-24 bg-slate-100 rounded animate-pulse" />
                     )}
 
-                    {/* 2. Number underneath */}
-                    <div
-                      className={`font-black font-mono text-slate-900 mt-1 leading-none ${
-                        cardsPerPage === 12 ? 'text-sm' : 'text-xs'
-                      }`}
-                    >
-                      #{p.countNumber ?? p.participantId}
-                    </div>
+                    {/* Bottom Info: Number & Name */}
+                    <div className="w-full shrink-0 mt-0.5">
+                      {/* 2. Number underneath */}
+                      <div
+                        className={`font-black font-mono text-slate-900 leading-none ${
+                          cardsPerPage === 12 ? 'text-sm' : 'text-xs'
+                        }`}
+                      >
+                        #{p.countNumber ?? p.participantId}
+                      </div>
 
-                    {/* 3. Name underneath */}
-                    <div
-                      className={`font-bold text-slate-800 mt-1 leading-tight line-clamp-2 px-0.5 ${
-                        cardsPerPage === 12 ? 'text-xs' : 'text-[11px]'
-                      }`}
-                    >
-                      {p.name}
+                      {/* 3. Name underneath */}
+                      <div
+                        className={`font-bold text-slate-800 mt-0.5 leading-tight truncate px-0.5 ${
+                          cardsPerPage === 12 ? 'text-xs' : 'text-[11px]'
+                        }`}
+                        title={p.name}
+                      >
+                        {p.name}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -320,8 +324,8 @@ export default function BulkPrintSheetPage() {
                       key={`empty-${emptyIdx}`}
                       className="border border-dashed border-slate-200 rounded-lg"
                       style={{
-                        minHeight: cardsPerPage === 20 ? '50mm' : '62mm',
-                        maxHeight: cardsPerPage === 20 ? '54mm' : '66mm',
+                        minHeight: cardsPerPage === 20 ? '51mm' : '65mm',
+                        maxHeight: cardsPerPage === 20 ? '53mm' : '67mm',
                       }}
                     />
                   )

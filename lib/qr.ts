@@ -36,7 +36,7 @@ export function hashToken(rawToken: string): string {
 export async function generateQRDataURL(rawToken: string): Promise<string> {
   return QRCode.toDataURL(rawToken, {
     errorCorrectionLevel: 'H',   // High error correction for durability
-    margin: 2,
+    margin: 1,
     width: 400,
     color: {
       dark: '#000000',
@@ -51,7 +51,7 @@ export async function generateQRDataURL(rawToken: string): Promise<string> {
 export async function generateQRBuffer(rawToken: string): Promise<Buffer> {
   return QRCode.toBuffer(rawToken, {
     errorCorrectionLevel: 'H',
-    margin: 2,
+    margin: 1,
     width: 400,
   })
 }
