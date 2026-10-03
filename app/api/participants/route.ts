@@ -11,9 +11,10 @@ export async function GET(req: NextRequest) {
 
   await connectDB()
   const q = req.nextUrl.searchParams.get('q') || ''
-  const page = parseInt(req.nextUrl.searchParams.get('page') || '1')
-  const limit = parseInt(req.nextUrl.searchParams.get('limit') || '50')
-  const skip = (page - 1) * limit
+  const page = Math.max(1, parseInt(req.nextUrl.searchParams.get('page') || '1'))
+  const limitParam = req.nextUrl.searchParams.get('limit')
+  const isAll = limitParam === 'all' || limitParam === '0'
+  const limit = isAll ? 0 : parseInt(limitParam || '500')
 
   let query = {}
   if (q) {
@@ -29,12 +30,21 @@ export async function GET(req: NextRequest) {
     }
   }
 
+  let findQuery = Participant.find(query)
+    .select('-qrTokenHash')
+    .sort({ countNumber: 1, participantId: 1 })
+
+  if (limit > 0) {
+    const skip = (page - 1) * limit
+    findQuery = findQuery.skip(skip).limit(limit)
+  }
+
   const [participants, total] = await Promise.all([
-    Participant.find(query).select('-qrTokenHash').sort({ countNumber: 1, participantId: 1 }).skip(skip).limit(limit),
+    findQuery.exec(),
     Participant.countDocuments(query),
   ])
 
-  return NextResponse.json({ participants, total, page, limit })
+  return NextResponse.json({ participants, total, page, limit: isAll ? total : limit })
 }
 
 export async function POST(req: NextRequest) {

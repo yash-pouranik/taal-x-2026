@@ -8,10 +8,12 @@ import {
   Plus,
   Search,
   ChevronRight,
+  ChevronLeft,
   Calendar,
   Loader2,
   UploadCloud,
   Pencil,
+  SlidersHorizontal,
 } from 'lucide-react'
 import EditParticipantModal from '@/components/EditParticipantModal'
 
@@ -34,12 +36,16 @@ export default function ParticipantsPage() {
   const [total, setTotal] = useState(0)
   const [q, setQ] = useState('')
   const [loading, setLoading] = useState(false)
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState<number | 'all'>('all')
   const [editingParticipant, setEditingParticipant] = useState<Participant | null>(null)
 
   const fetchParticipants = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await fetch(`/api/participants?q=${encodeURIComponent(q)}&limit=100`)
+      const res = await fetch(
+        `/api/participants?q=${encodeURIComponent(q)}&page=${page}&limit=${pageSize}`
+      )
       const data = await res.json()
       setParticipants(data.participants || [])
       setTotal(data.total || 0)
@@ -48,7 +54,11 @@ export default function ParticipantsPage() {
     } finally {
       setLoading(false)
     }
-  }, [q])
+  }, [q, page, pageSize])
+
+  useEffect(() => {
+    setPage(1)
+  }, [q, pageSize])
 
   useEffect(() => {
     const timer = setTimeout(fetchParticipants, 300)
@@ -101,16 +111,38 @@ export default function ParticipantsPage() {
           </div>
         </div>
 
-        {/* Search */}
-        <div className="relative mb-6">
-          <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
-          <input
-            type="text"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="प्रतिभागी का नाम, पिता का नाम या आईडी से खोजें..."
-            className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all shadow-xs placeholder:text-slate-400"
-          />
+        {/* Search & View Controls */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-6">
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="प्रतिभागी का नाम, माता/पिता का नाम, मोबाइल या आईडी से खोजें..."
+              className="w-full pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all shadow-xs placeholder:text-slate-400"
+            />
+          </div>
+
+          <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2 shadow-xs shrink-0 text-xs">
+            <SlidersHorizontal className="w-3.5 h-3.5 text-slate-400" />
+            <span className="text-slate-500 font-medium">दिखाएं:</span>
+            <div className="flex items-center gap-1">
+              {(['all', 50, 100, 200] as const).map((size) => (
+                <button
+                  key={size}
+                  onClick={() => setPageSize(size)}
+                  className={`px-2.5 py-1 rounded-lg font-semibold transition-all ${
+                    pageSize === size
+                      ? 'bg-orange-600 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                  }`}
+                >
+                  {size === 'all' ? 'सभी (All)' : size}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Table Container */}
@@ -272,6 +304,47 @@ export default function ParticipantsPage() {
               </tbody>
             </table>
           </div>
+        </div>
+
+        {/* Table Footer / Pagination */}
+        <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600 px-1">
+          <div>
+            <span>
+              कुल <strong>{total}</strong> में से <strong>{participants.length}</strong> प्रतिभागी प्रदर्शित
+            </span>
+            {pageSize !== 'all' && total > (typeof pageSize === 'number' ? pageSize : 0) && (
+              <span className="ml-2 text-slate-400">
+                (पृष्ठ {page} / {Math.ceil(total / (typeof pageSize === 'number' ? pageSize : 1))})
+              </span>
+            )}
+          </div>
+
+          {pageSize !== 'all' && total > (typeof pageSize === 'number' ? pageSize : 0) && (
+            <div className="flex items-center gap-2">
+              <button
+                disabled={page <= 1 || loading}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                className="inline-flex items-center gap-1 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:pointer-events-none transition-colors shadow-2xs font-semibold"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+                <span>पिछला</span>
+              </button>
+              <span className="px-2 font-mono font-bold text-slate-800">
+                {page} / {Math.ceil(total / (typeof pageSize === 'number' ? pageSize : 1))}
+              </span>
+              <button
+                disabled={
+                  page >= Math.ceil(total / (typeof pageSize === 'number' ? pageSize : 1)) ||
+                  loading
+                }
+                onClick={() => setPage((p) => p + 1)}
+                className="inline-flex items-center gap-1 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:pointer-events-none transition-colors shadow-2xs font-semibold"
+              >
+                <span>अगला</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Edit Modal */}
