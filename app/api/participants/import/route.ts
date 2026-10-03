@@ -61,7 +61,8 @@ export async function POST(req: NextRequest) {
   let currentCount = await Participant.countDocuments()
 
   const validCategories = ['general', 'obc', 'sc', 'st']
-  const docsToInsert: Array<Record<string, unknown>> = []
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const bulkOps: any[] = []
   const skipped: Array<{ row: number; reason: string; data: unknown }> = []
 
   for (let i = 0; i < list.length; i++) {
@@ -156,57 +157,67 @@ export async function POST(req: NextRequest) {
       continue
     }
 
-    currentCount++
-    const participantId = `NAV-${String(currentCount).padStart(3, '0')}`
-
-    let countNumber: number | undefined
+    let countNumber: number
     if (countNumStr && !isNaN(Number(countNumStr))) {
       countNumber = Number(countNumStr)
     } else {
+      currentCount++
       countNumber = currentCount
     }
 
+    const participantId = `NAV-${String(countNumber).padStart(3, '0')}`
     const category = validCategories.includes(rawCategory) ? rawCategory : null
 
     const rawToken = generateQRToken()
     const qrTokenHash = hashToken(rawToken)
 
-    docsToInsert.push({
-      participantId,
-      countNumber,
-      name,
-      motherName: motherName || '',
-      fatherName: fatherName || '',
-      phone: phone || '',
-      address: address || '',
-      category,
-      status: 'active',
-      qrToken: rawToken,
-      qrTokenHash,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+    bulkOps.push({
+      updateOne: {
+        filter: { participantId },
+        update: {
+          $set: {
+            participantId,
+            countNumber,
+            name,
+            motherName: motherName || '',
+            fatherName: fatherName || '',
+            phone: phone || '',
+            address: address || '',
+            category,
+            status: 'active',
+            updatedAt: new Date(),
+          },
+          $setOnInsert: {
+            qrToken: rawToken,
+            qrTokenHash,
+            createdAt: new Date(),
+          },
+        },
+        upsert: true,
+      },
     })
   }
 
-  if (docsToInsert.length === 0) {
+  if (bulkOps.length === 0) {
     return NextResponse.json(
       {
-        error: 'कोई भी रिकॉर्ड इम्पोर्ट नहीं हो सका। कृपया फ़ील्ड्स (kanya, pita ka nam) की जांच करें।',
+        error: 'कोई भी रिकॉर्ड इम्पोर्ट नहीं हो सका। कृपया फ़ील्ड्स (कन्या, पिता आदि) की जांच करें।',
         skipped,
       },
       { status: 400 }
     )
   }
 
-  // Insert all valid documents
-  const inserted = await Participant.insertMany(docsToInsert)
+  // Execute bulk operations with upsert
+  const bulkResult = await Participant.bulkWrite(bulkOps)
+  const totalAffected = (bulkResult.upsertedCount || 0) + (bulkResult.modifiedCount || 0) + (bulkResult.insertedCount || 0)
 
   return NextResponse.json({
     success: true,
     totalReceived: list.length,
-    importedCount: inserted.length,
+    importedCount: totalAffected || bulkOps.length,
     skippedCount: skipped.length,
     skipped,
-    message: `${inserted.length} प्रतिभागी सफलतापूर्वक इम्पोर्ट किए गए।`,
+    message: `${bulkOps.length} प्रतिभागी सफलतापूर्वक इम्पोर्ट/अपडेट किए गए।`,
   })
 }

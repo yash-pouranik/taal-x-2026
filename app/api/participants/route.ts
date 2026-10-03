@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
   }
 
   const [participants, total] = await Promise.all([
-    Participant.find(query).select('-qrTokenHash').sort({ participantId: 1 }).skip(skip).limit(limit),
+    Participant.find(query).select('-qrTokenHash').sort({ countNumber: 1, participantId: 1 }).skip(skip).limit(limit),
     Participant.countDocuments(query),
   ])
 

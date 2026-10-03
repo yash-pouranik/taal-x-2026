@@ -11,7 +11,7 @@ export async function GET() {
   }
 
   await connectDB()
-  const participants = await Participant.find().sort({ participantId: 1 })
+  const participants = await Participant.find().sort({ countNumber: 1, participantId: 1 })
 
   const rows = [
     ['Participant ID', 'Count Number', 'Bachi Ka Naam', 'Mata Ji Name', 'Pita Ji Name', 'Phone', 'Category', 'Address', 'Registration Date'],
