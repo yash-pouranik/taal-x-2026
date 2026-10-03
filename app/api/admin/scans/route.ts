@@ -5,7 +5,7 @@ import { connectDB } from '@/lib/db'
 import Claim from '@/models/Claim'
 import Participant from '@/models/Participant'
 import EventConfig from '@/models/EventConfig'
-import { getTodayIST } from '@/lib/dateUtils'
+import { getTodayIST, getEventTotalDays } from '@/lib/dateUtils'
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions)
@@ -18,13 +18,14 @@ export async function GET(req: NextRequest) {
   const config = await EventConfig.findOne()
   const todayIST = getTodayIST()
 
-  // Generate 9 days list
+  // Generate dynamic event days list
   let availableDates: { day: number; date: string; isToday: boolean }[] = []
   let defaultDate = todayIST
 
   if (config) {
-    for (let i = 0; i < 9; i++) {
-      const d = new Date(config.startDate)
+    const totalDays = getEventTotalDays(config)
+    for (let i = 0; i < totalDays; i++) {
+      const d = new Date(config.startDate + 'T00:00:00')
       d.setDate(d.getDate() + i)
       const dateStr = d.toISOString().split('T')[0]
       availableDates.push({

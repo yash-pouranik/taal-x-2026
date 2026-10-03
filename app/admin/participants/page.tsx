@@ -43,13 +43,27 @@ export default function ParticipantsPage() {
   const [pageSize, setPageSize] = useState<number | 'all'>('all')
   const [editingParticipant, setEditingParticipant] = useState<Participant | null>(null)
 
+  const [debouncedQ, setDebouncedQ] = useState('')
+  const [debouncedFrom, setDebouncedFrom] = useState('')
+  const [debouncedTo, setDebouncedTo] = useState('')
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedQ(q)
+      setDebouncedFrom(fromCount)
+      setDebouncedTo(toCount)
+      setPage(1)
+    }, 300)
+    return () => clearTimeout(handler)
+  }, [q, fromCount, toCount])
+
   const fetchParticipants = useCallback(async () => {
     setLoading(true)
     try {
       const params = new URLSearchParams()
-      if (q.trim()) params.set('q', q.trim())
-      if (fromCount.trim()) params.set('from', fromCount.trim())
-      if (toCount.trim()) params.set('to', toCount.trim())
+      if (debouncedQ.trim()) params.set('q', debouncedQ.trim())
+      if (debouncedFrom.trim()) params.set('from', debouncedFrom.trim())
+      if (debouncedTo.trim()) params.set('to', debouncedTo.trim())
       params.set('page', String(page))
       params.set('limit', String(pageSize))
 
@@ -63,15 +77,10 @@ export default function ParticipantsPage() {
     } finally {
       setLoading(false)
     }
-  }, [q, fromCount, toCount, page, pageSize])
+  }, [debouncedQ, debouncedFrom, debouncedTo, page, pageSize])
 
   useEffect(() => {
-    setPage(1)
-  }, [q, fromCount, toCount, pageSize])
-
-  useEffect(() => {
-    const timer = setTimeout(fetchParticipants, 300)
-    return () => clearTimeout(timer)
+    fetchParticipants()
   }, [fetchParticipants])
 
   return (

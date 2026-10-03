@@ -24,12 +24,12 @@ export default function StaffDashboard() {
   const day = stats?.config
     ? (() => {
         const today = new Date().toISOString().split('T')[0]
-        const start = new Date(stats.config.startDate)
-        const now = new Date(today)
-        const diff = Math.floor(
-          (now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
-        )
-        return diff >= 0 && diff < 9 ? diff + 1 : null
+        const start = new Date(stats.config.startDate + 'T00:00:00')
+        const end = new Date(stats.config.endDate + 'T00:00:00')
+        const now = new Date(today + 'T00:00:00')
+        const totalDays = Math.max(1, Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1)
+        const diff = Math.round((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
+        return diff >= 0 && diff < totalDays ? diff + 1 : null
       })()
     : null
 

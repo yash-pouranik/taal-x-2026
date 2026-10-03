@@ -159,7 +159,7 @@ export default function AdminDashboard() {
                   </div>
                   <div>
                     <h2 className="font-bold text-base text-slate-900">
-                      ९-दिवसीय वितरण विवरण
+                      {stats.perDay.length > 0 ? `${stats.perDay.length}-दिवसीय वितरण विवरण` : 'दैनिक वितरण विवरण'}
                     </h2>
                     <p className="text-xs text-slate-500 mt-0.5">
                       प्रत्येक दिन सत्यापित और वितरित सामग्री का विवरण।

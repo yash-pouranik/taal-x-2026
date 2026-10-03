@@ -5,7 +5,7 @@ import { connectDB } from '@/lib/db'
 import Claim from '@/models/Claim'
 import Participant from '@/models/Participant'
 import EventConfig from '@/models/EventConfig'
-import { getCurrentIndiaDate } from '@/lib/dateUtils'
+import { getCurrentIndiaDate, getEventTotalDays } from '@/lib/dateUtils'
 
 export async function GET() {
   const session = await getServerSession(authOptions)
@@ -21,10 +21,11 @@ export async function GET() {
 
   const todayClaims = await Claim.countDocuments({ distributionDate: todayDate })
 
-  // Per-day breakdown
+  // Dynamic per-day breakdown
   const perDay: { day: number; date: string; collected: number }[] = []
   if (config) {
-    for (let i = 0; i < 9; i++) {
+    const totalDays = getEventTotalDays(config)
+    for (let i = 0; i < totalDays; i++) {
       const d = new Date(config.startDate + 'T00:00:00')
       d.setDate(d.getDate() + i)
       const dateStr = d.toISOString().split('T')[0]

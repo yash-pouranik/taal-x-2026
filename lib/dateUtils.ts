@@ -81,6 +81,22 @@ export function getNavratriDay(
   return dayOffset + 1  // Day 1 = startDate
 }
 
+/**
+ * Calculates the total number of days between startDate and endDate (inclusive).
+ * Returns at least 1, default 9 if unconfigured.
+ */
+export function getEventTotalDays(config: EventConfigDates | null | undefined): number {
+  if (!config || !config.startDate || !config.endDate) return 9
+  try {
+    const start = parseISO(config.startDate)
+    const end = parseISO(config.endDate)
+    if (!isValid(start) || !isValid(end)) return 9
+    return Math.max(1, differenceInCalendarDays(end, start) + 1)
+  } catch {
+    return 9
+  }
+}
+
 export type DistributionStatus =
   | { active: true; day: number; todayDate: string }
   | { active: false; reason: 'NOT_STARTED' | 'ENDED' | 'NO_CONFIG'; todayDate: string }

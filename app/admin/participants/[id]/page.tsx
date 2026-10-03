@@ -433,7 +433,7 @@ export default function ParticipantDetailPage() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-3 border-b border-slate-100">
                 <div>
                   <h2 className="font-bold text-base text-slate-900">
-                    9 दिवसीय वितरण एवं उपस्थिति सारणी
+                    {dayGrid.length > 0 ? `${dayGrid.length} दिवसीय` : ''} वितरण एवं उपस्थिति सारणी
                   </h2>
                   <p className="text-xs text-slate-500 mt-0.5">
                     उपहार/प्रॉप, भोजन पैकेट और प्रवेश/प्रस्थान समय का अलग-अलग विवरण।

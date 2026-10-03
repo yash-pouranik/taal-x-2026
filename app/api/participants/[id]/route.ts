@@ -5,7 +5,7 @@ import { connectDB } from '@/lib/db'
 import Participant from '@/models/Participant'
 import Claim from '@/models/Claim'
 import EventConfig from '@/models/EventConfig'
-import { formatDurationHindi } from '@/lib/dateUtils'
+import { formatDurationHindi, getEventTotalDays } from '@/lib/dateUtils'
 
 export async function GET(
   req: NextRequest,
@@ -49,8 +49,9 @@ export async function GET(
   }[] = []
 
   if (config) {
-    for (let i = 0; i < 9; i++) {
-      const d = new Date(config.startDate)
+    const totalDays = getEventTotalDays(config)
+    for (let i = 0; i < totalDays; i++) {
+      const d = new Date(config.startDate + 'T00:00:00')
       d.setDate(d.getDate() + i)
       const dateStr = d.toISOString().split('T')[0]
       const claim = claims.find(c => c.distributionDate === dateStr)

@@ -34,7 +34,7 @@ const ClaimSchema = new Schema<IClaim>(
       type: Number,
       required: true,
       min: 1,
-      max: 9,
+      max: 30,
     },
     claimedAt: {
       type: Date,
