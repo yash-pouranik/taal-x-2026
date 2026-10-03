@@ -11,7 +11,9 @@ import {
   Calendar,
   Loader2,
   UploadCloud,
+  Pencil,
 } from 'lucide-react'
+import EditParticipantModal from '@/components/EditParticipantModal'
 
 interface Participant {
   _id: string
@@ -22,7 +24,7 @@ interface Participant {
   fatherName: string
   phone?: string
   address?: string
-  category?: 'general' | 'obc' | 'sc' | 'st'
+  category?: 'general' | 'obc' | 'sc' | 'st' | null
   status?: 'active' | 'cancelled'
   createdAt: string
 }
@@ -32,6 +34,7 @@ export default function ParticipantsPage() {
   const [total, setTotal] = useState(0)
   const [q, setQ] = useState('')
   const [loading, setLoading] = useState(false)
+  const [editingParticipant, setEditingParticipant] = useState<Participant | null>(null)
 
   const fetchParticipants = useCallback(async () => {
     setLoading(true)
@@ -244,13 +247,23 @@ export default function ParticipantsPage() {
                           </div>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <Link
-                            href={`/admin/participants/${p._id}`}
-                            className="inline-flex items-center gap-1 text-xs font-bold text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100 px-3 py-1.5 rounded-lg transition-colors"
-                          >
-                            <span>विवरण देखें</span>
-                            <ChevronRight className="w-3.5 h-3.5" />
-                          </Link>
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => setEditingParticipant(p)}
+                              className="inline-flex items-center gap-1 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-lg transition-colors shadow-2xs"
+                              title="विवरण एडिट करें"
+                            >
+                              <Pencil className="w-3.5 h-3.5 text-slate-500" />
+                              <span>एडिट</span>
+                            </button>
+                            <Link
+                              href={`/admin/participants/${p._id}`}
+                              className="inline-flex items-center gap-1 text-xs font-bold text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100 px-3 py-1.5 rounded-lg transition-colors"
+                            >
+                              <span>विवरण</span>
+                              <ChevronRight className="w-3.5 h-3.5" />
+                            </Link>
+                          </div>
                         </td>
                       </tr>
                     )
@@ -260,6 +273,21 @@ export default function ParticipantsPage() {
             </table>
           </div>
         </div>
+
+        {/* Edit Modal */}
+        <EditParticipantModal
+          isOpen={!!editingParticipant}
+          onClose={() => setEditingParticipant(null)}
+          participant={editingParticipant}
+          onSuccess={(updated) => {
+            setParticipants((prev) =>
+              prev.map((item) =>
+                item._id === updated._id ? ({ ...item, ...updated } as Participant) : item
+              )
+            )
+            setEditingParticipant(null)
+          }}
+        />
       </main>
     </div>
   )

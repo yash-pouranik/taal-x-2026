@@ -22,7 +22,9 @@ import {
   UtensilsCrossed,
   LogIn,
   LogOut as ExitIcon,
+  Pencil,
 } from 'lucide-react'
+import EditParticipantModal from '@/components/EditParticipantModal'
 
 interface DayGrid {
   day: number
@@ -62,7 +64,7 @@ interface Participant {
   fatherName: string
   phone?: string
   address?: string
-  category?: 'general' | 'obc' | 'sc' | 'st'
+  category?: 'general' | 'obc' | 'sc' | 'st' | null
   status?: 'active' | 'cancelled'
   cancelledAt?: string
   createdAt: string
@@ -80,6 +82,7 @@ export default function ParticipantDetailPage() {
   const [actionLoading, setActionLoading] = useState(false)
 
   // Dialog states
+  const [showEditModal, setShowEditModal] = useState(false)
   const [showRegenModal, setShowRegenModal] = useState(false)
   const [showCancelModal, setShowCancelModal] = useState(false)
   const [showReactivateModal, setShowReactivateModal] = useState(false)
@@ -268,6 +271,17 @@ export default function ParticipantDetailPage() {
         onCancel={() => setShowDeleteModal(false)}
       />
 
+      {/* Edit Participant Modal */}
+      <EditParticipantModal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        participant={participant}
+        onSuccess={(updated) => {
+          setParticipant((prev) => (prev ? ({ ...prev, ...updated } as Participant) : null))
+          setShowEditModal(false)
+        }}
+      />
+
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb */}
         <div className="mb-6 flex items-center justify-between">
@@ -391,15 +405,25 @@ export default function ParticipantDetailPage() {
                   </div>
                 </div>
 
-                {!isCancelled && (
-                  <Link
-                    href={`/admin/participants/${id}/print`}
-                    className="inline-flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-4 py-2.5 rounded-xl font-semibold text-xs shadow-xs transition-colors"
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <button
+                    onClick={() => setShowEditModal(true)}
+                    className="inline-flex items-center justify-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-4 py-2.5 rounded-xl font-semibold text-xs shadow-xs transition-colors"
                   >
-                    <Printer className="w-4 h-4" />
-                    <span>आईडी कार्ड प्रिंट करें</span>
-                  </Link>
-                )}
+                    <Pencil className="w-4 h-4 text-slate-500" />
+                    <span>एडिट करें</span>
+                  </button>
+
+                  {!isCancelled && (
+                    <Link
+                      href={`/admin/participants/${id}/print`}
+                      className="inline-flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-4 py-2.5 rounded-xl font-semibold text-xs shadow-xs transition-colors"
+                    >
+                      <Printer className="w-4 h-4" />
+                      <span>आईडी कार्ड प्रिंट करें</span>
+                    </Link>
+                  )}
+                </div>
               </div>
             </div>
 

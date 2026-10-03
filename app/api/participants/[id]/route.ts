@@ -128,7 +128,7 @@ export async function PUT(
     const validCategories = ['general', 'obc', 'sc', 'st']
     updateData.category = validCategories.includes(String(category).toLowerCase())
       ? String(category).toLowerCase()
-      : 'general'
+      : null
   }
 
   const participant = await Participant.findByIdAndUpdate(
