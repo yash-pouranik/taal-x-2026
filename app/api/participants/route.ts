@@ -10,24 +10,81 @@ export async function GET(req: NextRequest) {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   await connectDB()
-  const q = req.nextUrl.searchParams.get('q') || ''
+  const q = (req.nextUrl.searchParams.get('q') || '').trim()
   const page = Math.max(1, parseInt(req.nextUrl.searchParams.get('page') || '1'))
   const limitParam = req.nextUrl.searchParams.get('limit')
   const isAll = limitParam === 'all' || limitParam === '0'
   const limit = isAll ? 0 : parseInt(limitParam || '500')
 
-  let query = {}
-  if (q) {
-    query = {
+  const fromParam = req.nextUrl.searchParams.get('from') || req.nextUrl.searchParams.get('fromCount')
+  const toParam = req.nextUrl.searchParams.get('to') || req.nextUrl.searchParams.get('toCount')
+
+  // Check if range is given via query params
+  let from: number | null = fromParam && !isNaN(Number(fromParam)) ? Number(fromParam) : null
+  let to: number | null = toParam && !isNaN(Number(toParam)) ? Number(toParam) : null
+
+  // Check if `q` matches a range pattern: e.g. "262 or 278", "262-278", "262 to 278", "262 se 278", "262 278"
+  const rangeMatch = q.match(/^#?(\d+)\s*(?:-|to|or|se|and|तक|\s)+\s*#?(\d+)(?:\s*(?:tak|तक))?$/i)
+  if (rangeMatch) {
+    const n1 = parseInt(rangeMatch[1], 10)
+    const n2 = parseInt(rangeMatch[2], 10)
+    from = Math.min(n1, n2)
+    to = Math.max(n1, n2)
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let query: any = {}
+
+  if (from !== null && to !== null) {
+    const paddedIds: string[] = []
+    if (to - from <= 2000) {
+      for (let c = from; c <= to; c++) {
+        paddedIds.push(`NAV-${String(c).padStart(3, '0')}`)
+        paddedIds.push(`NAV-${c}`)
+      }
+    }
+    const rangeCondition = {
       $or: [
+        { countNumber: { $gte: from, $lte: to } },
+        { participantId: { $in: paddedIds } },
+      ],
+    }
+
+    if (q && !rangeMatch) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const orConditions: any[] = [
         { name: { $regex: q, $options: 'i' } },
         { motherName: { $regex: q, $options: 'i' } },
         { fatherName: { $regex: q, $options: 'i' } },
         { phone: { $regex: q, $options: 'i' } },
         { address: { $regex: q, $options: 'i' } },
         { participantId: { $regex: q, $options: 'i' } },
-      ],
+      ]
+      query = {
+        $and: [rangeCondition, { $or: orConditions }],
+      }
+    } else {
+      query = rangeCondition
     }
+  } else if (from !== null) {
+    query = { countNumber: { $gte: from } }
+  } else if (to !== null) {
+    query = { countNumber: { $lte: to } }
+  } else if (q) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const orConditions: any[] = [
+      { name: { $regex: q, $options: 'i' } },
+      { motherName: { $regex: q, $options: 'i' } },
+      { fatherName: { $regex: q, $options: 'i' } },
+      { phone: { $regex: q, $options: 'i' } },
+      { address: { $regex: q, $options: 'i' } },
+      { participantId: { $regex: q, $options: 'i' } },
+    ]
+    const cleanNum = q.replace(/^#/, '').trim()
+    if (!isNaN(Number(cleanNum)) && cleanNum !== '') {
+      orConditions.push({ countNumber: Number(cleanNum) })
+    }
+    query = { $or: orConditions }
   }
 
   let findQuery = Participant.find(query)
@@ -44,7 +101,13 @@ export async function GET(req: NextRequest) {
     Participant.countDocuments(query),
   ])
 
-  return NextResponse.json({ participants, total, page, limit: isAll ? total : limit })
+  return NextResponse.json({
+    participants,
+    total,
+    page,
+    limit: isAll ? total : limit,
+    detectedRange: from !== null && to !== null ? { from, to } : null,
+  })
 }
 
 export async function POST(req: NextRequest) {

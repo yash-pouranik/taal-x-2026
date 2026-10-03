@@ -35,6 +35,9 @@ export default function ParticipantsPage() {
   const [participants, setParticipants] = useState<Participant[]>([])
   const [total, setTotal] = useState(0)
   const [q, setQ] = useState('')
+  const [fromCount, setFromCount] = useState('')
+  const [toCount, setToCount] = useState('')
+  const [detectedRange, setDetectedRange] = useState<{ from: number; to: number } | null>(null)
   const [loading, setLoading] = useState(false)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState<number | 'all'>('all')
@@ -43,22 +46,28 @@ export default function ParticipantsPage() {
   const fetchParticipants = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await fetch(
-        `/api/participants?q=${encodeURIComponent(q)}&page=${page}&limit=${pageSize}`
-      )
+      const params = new URLSearchParams()
+      if (q.trim()) params.set('q', q.trim())
+      if (fromCount.trim()) params.set('from', fromCount.trim())
+      if (toCount.trim()) params.set('to', toCount.trim())
+      params.set('page', String(page))
+      params.set('limit', String(pageSize))
+
+      const res = await fetch(`/api/participants?${params.toString()}`)
       const data = await res.json()
       setParticipants(data.participants || [])
       setTotal(data.total || 0)
+      setDetectedRange(data.detectedRange || null)
     } catch (err) {
       console.error(err)
     } finally {
       setLoading(false)
     }
-  }, [q, page, pageSize])
+  }, [q, fromCount, toCount, page, pageSize])
 
   useEffect(() => {
     setPage(1)
-  }, [q, pageSize])
+  }, [q, fromCount, toCount, pageSize])
 
   useEffect(() => {
     const timer = setTimeout(fetchParticipants, 300)
@@ -112,16 +121,48 @@ export default function ParticipantsPage() {
         </div>
 
         {/* Search & View Controls */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-6">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-3">
           <div className="relative flex-1">
             <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="प्रतिभागी का नाम, माता/पिता का नाम, मोबाइल या आईडी से खोजें..."
+              placeholder="खोजें (उदा. नाम, मोबाइल, या रेंज जैसे 262 or 278, 262-278)..."
               className="w-full pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all shadow-xs placeholder:text-slate-400"
             />
+          </div>
+
+          {/* Quick Range Inputs */}
+          <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl px-3 py-1.5 shadow-xs text-xs">
+            <span className="font-semibold text-slate-700 whitespace-nowrap">रेंज:</span>
+            <input
+              type="number"
+              placeholder="से"
+              value={fromCount}
+              onChange={(e) => setFromCount(e.target.value)}
+              className="w-16 px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-orange-500"
+            />
+            <span className="text-slate-400 font-bold">-</span>
+            <input
+              type="number"
+              placeholder="तक"
+              value={toCount}
+              onChange={(e) => setToCount(e.target.value)}
+              className="w-16 px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-orange-500"
+            />
+            {(fromCount !== '' || toCount !== '') && (
+              <button
+                onClick={() => {
+                  setFromCount('')
+                  setToCount('')
+                }}
+                className="text-red-500 hover:text-red-700 font-bold text-xs ml-1 bg-red-50 hover:bg-red-100 px-1.5 py-0.5 rounded transition-colors"
+                title="रेंज हटाएं"
+              >
+                ✕
+              </button>
+            )}
           </div>
 
           <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2 shadow-xs shrink-0 text-xs">
@@ -144,6 +185,30 @@ export default function ParticipantsPage() {
             </div>
           </div>
         </div>
+
+        {/* Active Range Banner */}
+        {(detectedRange || (fromCount && toCount)) && (
+          <div className="flex items-center gap-2 mb-4 bg-orange-50 border border-orange-200 text-orange-950 px-3.5 py-2 rounded-xl text-xs w-fit shadow-2xs">
+            <span className="font-bold text-orange-700">🎯 क्रमांक रेंज सक्रिय:</span>
+            <span className="font-mono font-bold bg-white px-2 py-0.5 rounded border border-orange-200">
+              #{detectedRange?.from ?? fromCount} से #{detectedRange?.to ?? toCount}
+            </span>
+            <span className="text-orange-800 font-medium">
+              ({total} प्रतिभागी मिले)
+            </span>
+            <button
+              onClick={() => {
+                setFromCount('')
+                setToCount('')
+                setQ('')
+              }}
+              className="text-orange-700 hover:text-orange-950 font-bold text-xs bg-orange-200/70 hover:bg-orange-200 px-1.5 py-0.5 rounded ml-1 transition-colors"
+              title="रेंज हटाएं"
+            >
+              ✕ हटाएं
+            </button>
+          </div>
+        )}
 
         {/* Table Container */}
         <div className="bg-white rounded-2xl shadow-xs border border-slate-200/80 overflow-hidden">
