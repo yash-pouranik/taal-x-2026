@@ -10,6 +10,7 @@ import {
   ChevronRight,
   Calendar,
   Loader2,
+  UploadCloud,
 } from 'lucide-react'
 
 interface Participant {
@@ -72,7 +73,14 @@ export default function ParticipantsPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
+            <Link
+              href="/admin/participants/import"
+              className="inline-flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-4 py-2.5 rounded-xl font-semibold transition-all text-sm shadow-xs"
+            >
+              <UploadCloud className="w-4 h-4 text-orange-600" />
+              <span>बल्क JSON इम्पोर्ट</span>
+            </Link>
             <Link
               href="/admin/participants/print-sheet"
               className="inline-flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-4 py-2.5 rounded-xl font-semibold transition-all text-sm shadow-xs"

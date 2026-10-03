@@ -57,8 +57,8 @@ const ParticipantSchema = new Schema<IParticipant>(
     },
     category: {
       type: String,
-      enum: ['general', 'obc', 'sc', 'st'],
-      default: 'general',
+      enum: ['general', 'obc', 'sc', 'st', null],
+      default: null,
     },
     status: {
       type: String,
