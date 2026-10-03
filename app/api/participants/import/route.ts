@@ -5,18 +5,52 @@ import { connectDB } from '@/lib/db'
 import Participant from '@/models/Participant'
 import { generateQRToken, hashToken } from '@/lib/qr'
 
-// Helper to find a value across various case-insensitive key synonyms
-function getField(obj: Record<string, unknown>, keys: string[]): string {
-  for (const k of keys) {
-    for (const objKey of Object.keys(obj)) {
-      if (objKey.trim().toLowerCase() === k.toLowerCase()) {
-        const val = obj[objKey]
-        if (val !== undefined && val !== null) {
+function cleanKey(s: string): string {
+  return String(s || '')
+    .normalize('NFC')
+    .replace(/[\s\-_:.,;!?'"()[\]{}|/\\]/g, '')
+    .toLowerCase()
+}
+
+// Helper to find a value across various key synonyms with Unicode & partial matching
+function getField(
+  obj: Record<string, unknown>,
+  targets: string[],
+  containsTargets: string[] = [],
+  excludeContains: string[] = []
+): string {
+  const objKeys = Object.keys(obj)
+
+  // 1. Exact match (case & whitespace & punctuation insensitive)
+  for (const t of targets) {
+    const cleanT = cleanKey(t)
+    for (const k of objKeys) {
+      const ck = cleanKey(k)
+      if (excludeContains.some((exc) => ck.includes(cleanKey(exc)))) continue
+      if (ck === cleanT) {
+        const val = obj[k]
+        if (val !== undefined && val !== null && String(val).trim() !== '') {
           return String(val).trim()
         }
       }
     }
   }
+
+  // 2. Partial substring match
+  for (const ct of containsTargets) {
+    const cleanCt = cleanKey(ct)
+    for (const k of objKeys) {
+      const ck = cleanKey(k)
+      if (excludeContains.some((exc) => ck.includes(cleanKey(exc)))) continue
+      if (ck.includes(cleanCt)) {
+        const val = obj[k]
+        if (val !== undefined && val !== null && String(val).trim() !== '') {
+          return String(val).trim()
+        }
+      }
+    }
+  }
+
   return ''
 }
 
@@ -73,84 +107,48 @@ export async function POST(req: NextRequest) {
     }
 
     // Map flexible keys
-    const name = getField(item, [
-      'kanya',
-      'kanya ka naam',
-      'kanya naam',
-      'name',
-      'bachi',
-      'bachi ka naam',
-      'girl',
-      'girl name',
-      'बच्ची का नाम',
-      'कन्या',
-      'नाम',
-    ])
+    const name = getField(
+      item,
+      ['कन्या', 'kanya', 'name', 'bachi', 'बच्ची', 'girl', 'कन्या का नाम', 'नाम', 'लड़की'],
+      ['कन्या', 'kanya', 'bachi', 'बच्ची'],
+      ['पिता', 'माता', 'father', 'mother', 'pita', 'mata']
+    )
 
-    const fatherName = getField(item, [
-      'pita ka nam',
-      'pita ka naam',
-      'pita',
-      'pita ji',
-      'pitaji',
-      'father',
-      'father name',
-      'fatherName',
-      'पिता का नाम',
-      'पिता',
-    ])
+    const fatherName = getField(
+      item,
+      ['पिता', 'पिताजी', 'पिता का नाम', 'पिताजी का नाम', 'pita', 'pitaji', 'father', 'father name', 'fathername', 'pita ka nam', 'pita ka naam'],
+      ['पिता', 'pita', 'father']
+    )
 
-    const motherName = getField(item, [
-      'mata ka naam',
-      'mata ka nam',
-      'mata',
-      'mata ji',
-      'mataji',
-      'mother',
-      'mother name',
-      'motherName',
-      'माता का नाम',
-      'माता',
-    ])
+    const motherName = getField(
+      item,
+      ['माता', 'माताजी', 'माता का नाम', 'माताजी का नाम', 'mata', 'mataji', 'mother', 'mother name', 'mothername', 'mata ka nam', 'mata ka naam'],
+      ['माता', 'mata', 'mother']
+    )
 
-    const phone = getField(item, [
-      'number',
-      'phone',
-      'mobile',
-      'contact',
-      'phone number',
-      'mobile number',
-      'फोन नंबर',
-      'मोबाइल',
-      'नंबर',
-    ])
+    const phone = getField(
+      item,
+      ['मोबाइल', 'मोबाइल नंबर', 'मोबाइल नं', 'फोन', 'फ़ोन', 'फोन नंबर', 'phone', 'mobile', 'contact', 'संपर्क', 'number', 'नंबर'],
+      ['मोबाइल', 'mobile', 'फोन', 'फ़ोन', 'phone', 'संपर्क']
+    )
 
-    const address = getField(item, [
-      'pata',
-      'address',
-      'city',
-      'location',
-      'पता',
-    ])
+    const address = getField(
+      item,
+      ['पता', 'address', 'pata', 'शहर', 'स्थान', 'कॉलोनी', 'colony', 'निवास'],
+      ['पता', 'address', 'pata', 'निवास']
+    )
 
-    const countNumStr = getField(item, [
-      'count number',
-      'count number as id',
-      'count',
-      'countNumber',
-      'id',
-      'क्रमांक',
-      'काउंट नंबर',
-      'क्रमांक संख्या',
-    ])
+    const countNumStr = getField(
+      item,
+      ['क्रमांक', 'count number', 'count', 'countnumber', 'id', 'srno', 'sno', 'क्रम'],
+      ['क्रमांक', 'count']
+    )
 
-    const rawCategory = getField(item, [
-      'category',
-      'catagory',
-      'caste',
-      'वर्ग',
-      'जाति',
-    ]).toLowerCase()
+    const rawCategory = getField(
+      item,
+      ['category', 'catagory', 'caste', 'वर्ग', 'जाति', 'श्रेणी'],
+      ['category', 'वर्ग']
+    ).toLowerCase()
 
     if (!name) {
       skipped.push({ row: i + 1, reason: 'कन्या / बच्ची का नाम अनुपलब्ध (Missing name)', data: item })

@@ -65,27 +65,83 @@ export default function BulkImportPage() {
         return
       }
 
+      const cleanKey = (s: string) =>
+        String(s || '')
+          .normalize('NFC')
+          .replace(/[\s\-_:.,;!?'"()[\]{}|/\\]/g, '')
+          .toLowerCase()
+
       const preview: ParsedItem[] = list.map((item: Record<string, unknown>) => {
-        const getVal = (keys: string[]) => {
-          for (const k of keys) {
-            for (const objKey of Object.keys(item)) {
-              if (objKey.trim().toLowerCase() === k.toLowerCase()) {
-                const val = item[objKey]
-                if (val !== undefined && val !== null) return String(val).trim()
+        const getVal = (
+          targets: string[],
+          containsTargets: string[] = [],
+          excludeContains: string[] = []
+        ) => {
+          const objKeys = Object.keys(item)
+
+          // 1. Exact match (case & whitespace & punctuation insensitive)
+          for (const t of targets) {
+            const cleanT = cleanKey(t)
+            for (const k of objKeys) {
+              const ck = cleanKey(k)
+              if (excludeContains.some((exc) => ck.includes(cleanKey(exc)))) continue
+              if (ck === cleanT) {
+                const val = item[k]
+                if (val !== undefined && val !== null && String(val).trim() !== '') {
+                  return String(val).trim()
+                }
               }
             }
           }
+
+          // 2. Partial substring match
+          for (const ct of containsTargets) {
+            const cleanCt = cleanKey(ct)
+            for (const k of objKeys) {
+              const ck = cleanKey(k)
+              if (excludeContains.some((exc) => ck.includes(cleanKey(exc)))) continue
+              if (ck.includes(cleanCt)) {
+                const val = item[k]
+                if (val !== undefined && val !== null && String(val).trim() !== '') {
+                  return String(val).trim()
+                }
+              }
+            }
+          }
+
           return ''
         }
 
         return {
-          countNumber: getVal(['count number', 'count number as id', 'count', 'countNumber', 'id', 'क्रमांक', 'काउंट नंबर', 'क्रमांक संख्या']) || '-',
-          name: getVal(['kanya', 'kanya ka naam', 'kanya naam', 'name', 'bachi', 'bachi ka naam', 'girl', 'girl name', 'बच्ची का नाम', 'कन्या', 'नाम']),
-          fatherName: getVal(['pita ka nam', 'pita ka naam', 'pita', 'pita ji', 'pitaji', 'father', 'father name', 'fatherName', 'पिता का नाम', 'पिता', 'पिताजी']),
-          motherName: getVal(['mata ka naam', 'mata ka nam', 'mata', 'mata ji', 'mataji', 'mother', 'mother name', 'motherName', 'माता का नाम', 'माता', 'माताजी']),
-          phone: getVal(['number', 'phone', 'mobile', 'contact', 'phone number', 'mobile number', 'फोन नंबर', 'मोबाइल', 'नंबर', 'फ़ोन', 'फोन']),
-          address: getVal(['pata', 'address', 'city', 'location', 'पता']),
-          category: getVal(['category', 'catagory', 'वर्ग', 'जाति', 'श्रेणी']) || null,
+          countNumber:
+            getVal(
+              ['क्रमांक', 'count number', 'count', 'countnumber', 'id', 'srno', 'sno', 'क्रम'],
+              ['क्रमांक', 'count']
+            ) || '-',
+          name: getVal(
+            ['कन्या', 'kanya', 'name', 'bachi', 'बच्ची', 'girl', 'कन्या का नाम', 'नाम', 'लड़की'],
+            ['कन्या', 'kanya', 'bachi', 'बच्ची'],
+            ['पिता', 'माता', 'father', 'mother', 'pita', 'mata']
+          ),
+          fatherName: getVal(
+            ['पिता', 'पिताजी', 'पिता का नाम', 'पिताजी का नाम', 'pita', 'pitaji', 'father', 'father name', 'fathername', 'pita ka nam', 'pita ka naam'],
+            ['पिता', 'pita', 'father']
+          ),
+          motherName: getVal(
+            ['माता', 'माताजी', 'माता का नाम', 'माताजी का नाम', 'mata', 'mataji', 'mother', 'mother name', 'mothername', 'mata ka nam', 'mata ka naam'],
+            ['माता', 'mata', 'mother']
+          ),
+          phone: getVal(
+            ['मोबाइल', 'मोबाइल नंबर', 'मोबाइल नं', 'फोन', 'फ़ोन', 'फोन नंबर', 'phone', 'mobile', 'contact', 'संपर्क', 'number', 'नंबर'],
+            ['मोबाइल', 'mobile', 'फोन', 'फ़ोन', 'phone', 'संपर्क']
+          ),
+          address: getVal(
+            ['पता', 'address', 'pata', 'शहर', 'स्थान', 'कॉलोनी', 'colony', 'निवास'],
+            ['पता', 'address', 'pata', 'निवास']
+          ),
+          category:
+            getVal(['category', 'catagory', 'वर्ग', 'जाति', 'श्रेणी'], ['category', 'वर्ग']) ||
+            null,
         }
       })
 
