@@ -27,6 +27,16 @@ export default function BulkPrintSheetPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
 
+  const [cardsPerPage, setCardsPerPage] = useState<number>(12)
+  const [fromCount, setFromCount] = useState<string>('')
+  const [toCount, setToCount] = useState<string>('')
+
+  function getParticipantNum(p: ParticipantWithQR): number {
+    if (p.countNumber !== undefined && p.countNumber !== null) return Number(p.countNumber)
+    const match = p.participantId.match(/\d+/)
+    return match ? parseInt(match[0], 10) : 0
+  }
+
   useEffect(() => {
     async function loadData() {
       try {
@@ -39,7 +49,7 @@ export default function BulkPrintSheetPage() {
             const qrDataUrl = await QRCode.toDataURL(p.qrToken, {
               errorCorrectionLevel: 'M',
               margin: 1,
-              width: 160,
+              width: 350,
               color: { dark: '#000000', light: '#FFFFFF' },
             })
             return { ...p, qrDataUrl }
@@ -57,21 +67,32 @@ export default function BulkPrintSheetPage() {
     loadData()
   }, [])
 
-  const filtered = participants.filter((p) => {
-    if (!search.trim()) return true
-    const term = search.toLowerCase()
-    return (
-      p.name.toLowerCase().includes(term) ||
-      p.participantId.toLowerCase().includes(term) ||
-      (p.countNumber && String(p.countNumber).includes(term))
-    )
-  })
+  const filtered = participants
+    .filter((p) => {
+      const num = getParticipantNum(p)
 
-  // Group into pages of 20 compact tokens each (4 cols x 5 rows)
-  const CARDS_PER_PAGE = 20
+      if (fromCount !== '' && !isNaN(Number(fromCount))) {
+        if (num < Number(fromCount)) return false
+      }
+
+      if (toCount !== '' && !isNaN(Number(toCount))) {
+        if (num > Number(toCount)) return false
+      }
+
+      if (!search.trim()) return true
+      const term = search.toLowerCase()
+      return (
+        p.name.toLowerCase().includes(term) ||
+        p.participantId.toLowerCase().includes(term) ||
+        (p.countNumber && String(p.countNumber).includes(term))
+      )
+    })
+    .sort((a, b) => getParticipantNum(a) - getParticipantNum(b))
+
+  // Group into pages based on selected density (12, 16, or 20 per sheet)
   const pages: ParticipantWithQR[][] = []
-  for (let i = 0; i < filtered.length; i += CARDS_PER_PAGE) {
-    pages.push(filtered.slice(i, i + CARDS_PER_PAGE))
+  for (let i = 0; i < filtered.length; i += cardsPerPage) {
+    pages.push(filtered.slice(i, i + cardsPerPage))
   }
 
   return (
@@ -97,7 +118,76 @@ export default function BulkPrintSheetPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
+            {/* Density Selector */}
+            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs font-medium">
+              <span className="text-slate-500 px-2">साइज़:</span>
+              <button
+                onClick={() => setCardsPerPage(12)}
+                className={`px-3 py-1.5 rounded-lg transition-all ${
+                  cardsPerPage === 12
+                    ? 'bg-white text-orange-600 font-bold shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                बड़ा QR (12 प्रति शीट - 3×4)
+              </button>
+              <button
+                onClick={() => setCardsPerPage(16)}
+                className={`px-3 py-1.5 rounded-lg transition-all ${
+                  cardsPerPage === 16
+                    ? 'bg-white text-orange-600 font-bold shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                मध्यम (16 प्रति शीट - 4×4)
+              </button>
+              <button
+                onClick={() => setCardsPerPage(20)}
+                className={`px-3 py-1.5 rounded-lg transition-all ${
+                  cardsPerPage === 20
+                    ? 'bg-white text-orange-600 font-bold shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                छोटा (20 प्रति शीट - 4×5)
+              </button>
+            </div>
+
+            {/* Count Range Selector */}
+            <div className="flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-xl text-xs">
+              <span className="font-semibold text-slate-700 whitespace-nowrap">क्रमांक रेंज:</span>
+              <div className="flex items-center gap-1">
+                <input
+                  type="number"
+                  placeholder="से (From)"
+                  value={fromCount}
+                  onChange={(e) => setFromCount(e.target.value)}
+                  className="w-16 px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-mono font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                />
+                <span className="text-slate-400 font-bold">-</span>
+                <input
+                  type="number"
+                  placeholder="तक (To)"
+                  value={toCount}
+                  onChange={(e) => setToCount(e.target.value)}
+                  className="w-16 px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-mono font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                />
+              </div>
+              {(fromCount !== '' || toCount !== '') && (
+                <button
+                  onClick={() => {
+                    setFromCount('')
+                    setToCount('')
+                  }}
+                  className="text-red-500 hover:text-red-700 font-semibold text-[11px] ml-1 bg-red-50 hover:bg-red-100 px-1.5 py-0.5 rounded transition-colors"
+                  title="रेंज हटाएं"
+                >
+                  हटाएं
+                </button>
+              )}
+            </div>
+
             <div className="relative">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
@@ -126,10 +216,21 @@ export default function BulkPrintSheetPage() {
         <div className="max-w-6xl mx-auto mt-3 text-xs text-slate-500 flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-t border-slate-100 pt-2">
           <span className="flex items-center gap-1.5 text-slate-600 font-medium">
             <FileCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-            <span>प्रति A4 पेज पर 20 क्यूआर टोकन (4 × 5 ग्रिड)। केवल 50 शीट में 1,000 टोकन प्रिंट होते हैं।</span>
+            <span>
+              {cardsPerPage === 12
+                ? 'बड़ा QR: 12 टोकन प्रति A4 शीट (3 × 4 ग्रिड)।'
+                : cardsPerPage === 16
+                ? 'मध्यम QR: 16 टोकन प्रति A4 शीट (4 × 4 ग्रिड)।'
+                : 'छोटा QR: 20 टोकन प्रति A4 शीट (4 × 5 ग्रिड)।'}
+            </span>
+            {(fromCount !== '' || toCount !== '') && (
+              <span className="font-mono font-bold bg-orange-100 text-orange-800 px-2 py-0.5 rounded border border-orange-200">
+                क्रमांक #{fromCount || '1'} से #{toCount || 'अंतिम'} ({filtered.length} टोकन)
+              </span>
+            )}
           </span>
           <span className="text-slate-400">
-            प्रिंट सेटिंग में मार्जिन &quot;None&quot; या &quot;Minimum&quot; सेट करें ताकि सभी टोकन पूरे पेज पर सही आएं।
+            प्रिंटर सेटिंग में मार्जिन &quot;None&quot; या &quot;Minimum&quot; सेट करें।
           </span>
         </div>
       </header>
@@ -155,13 +256,24 @@ export default function BulkPrintSheetPage() {
                 minHeight: '270mm',
               }}
             >
-              {/* 4 columns × 5 rows = 20 tokens per A4 sheet */}
-              <div className="grid grid-cols-4 gap-2.5 h-full">
+              {/* Grid: 3 cols for 12, 4 cols for 16 or 20 */}
+              <div
+                className={`grid h-full ${
+                  cardsPerPage === 12
+                    ? 'grid-cols-3 gap-3.5'
+                    : cardsPerPage === 16
+                    ? 'grid-cols-4 gap-2.5'
+                    : 'grid-cols-4 gap-2'
+                }`}
+              >
                 {pageGroup.map((p) => (
                   <div
                     key={p._id}
                     className="border border-dashed border-slate-400 p-2 rounded-lg flex flex-col items-center justify-center text-center bg-white overflow-hidden"
-                    style={{ minHeight: '50mm', maxHeight: '54mm' }}
+                    style={{
+                      minHeight: cardsPerPage === 20 ? '50mm' : '62mm',
+                      maxHeight: cardsPerPage === 20 ? '54mm' : '66mm',
+                    }}
                   >
                     {/* 1. QR Code */}
                     {p.qrDataUrl ? (
@@ -169,31 +281,48 @@ export default function BulkPrintSheetPage() {
                       <img
                         src={p.qrDataUrl}
                         alt={`QR for ${p.name}`}
-                        className="w-20 h-20 max-w-[28mm] max-h-[28mm] object-contain shrink-0"
+                        className={`object-contain shrink-0 ${
+                          cardsPerPage === 12
+                            ? 'w-28 h-28 sm:w-32 sm:h-32 max-w-[38mm] max-h-[38mm]'
+                            : cardsPerPage === 16
+                            ? 'w-24 h-24 max-w-[33mm] max-h-[33mm]'
+                            : 'w-20 h-20 max-w-[28mm] max-h-[28mm]'
+                        }`}
                       />
                     ) : (
-                      <div className="w-20 h-20 bg-slate-100 rounded animate-pulse" />
+                      <div className="w-24 h-24 bg-slate-100 rounded animate-pulse" />
                     )}
 
                     {/* 2. Number underneath */}
-                    <div className="text-xs font-black font-mono text-slate-900 mt-1 leading-none">
+                    <div
+                      className={`font-black font-mono text-slate-900 mt-1 leading-none ${
+                        cardsPerPage === 12 ? 'text-sm' : 'text-xs'
+                      }`}
+                    >
                       #{p.countNumber ?? p.participantId}
                     </div>
 
                     {/* 3. Name underneath */}
-                    <div className="text-[11px] font-bold text-slate-800 mt-1 leading-tight line-clamp-2 px-0.5">
+                    <div
+                      className={`font-bold text-slate-800 mt-1 leading-tight line-clamp-2 px-0.5 ${
+                        cardsPerPage === 12 ? 'text-xs' : 'text-[11px]'
+                      }`}
+                    >
                       {p.name}
                     </div>
                   </div>
                 ))}
 
                 {/* Empty slots on final sheet */}
-                {Array.from({ length: CARDS_PER_PAGE - pageGroup.length }).map(
+                {Array.from({ length: cardsPerPage - pageGroup.length }).map(
                   (_, emptyIdx) => (
                     <div
                       key={`empty-${emptyIdx}`}
                       className="border border-dashed border-slate-200 rounded-lg"
-                      style={{ minHeight: '50mm', maxHeight: '54mm' }}
+                      style={{
+                        minHeight: cardsPerPage === 20 ? '50mm' : '62mm',
+                        maxHeight: cardsPerPage === 20 ? '54mm' : '66mm',
+                      }}
                     />
                   )
                 )}

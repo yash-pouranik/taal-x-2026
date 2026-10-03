@@ -67,14 +67,14 @@ export default function PrintPage() {
       </div>
 
       {/* The Printable Card */}
-      <div className="bg-white border-2 border-slate-900 rounded-3xl p-8 max-w-sm w-full text-center shadow-xl print:shadow-none print:border-slate-800 print:rounded-2xl">
+      <div className="bg-white border-2 border-slate-900 rounded-3xl p-8 max-w-md w-full text-center shadow-xl print:shadow-none print:border-slate-800 print:rounded-2xl">
         {/* 1. QR Code */}
         <div className="p-4 bg-white rounded-2xl border-2 border-slate-300 inline-block shadow-xs mb-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={qrDataUrl}
             alt="QR Code"
-            className="w-52 h-52 mx-auto rounded-lg"
+            className="w-72 h-72 mx-auto rounded-lg"
           />
         </div>
 
