@@ -109,40 +109,48 @@ export async function PUT(
   }
 
   await connectDB()
-  const body = await req.json()
-  const { name, motherName, fatherName, phone, address, countNumber, category } = body
+  try {
+    const body = await req.json()
+    const { name, motherName, fatherName, phone, address, countNumber, category } = body
 
-  if (!name?.trim() || !fatherName?.trim()) {
-    return NextResponse.json({ error: 'Name and father name are required' }, { status: 400 })
+    if (!name?.trim() || !fatherName?.trim()) {
+      return NextResponse.json({ error: 'बच्ची का नाम और पिता का नाम आवश्यक हैं।' }, { status: 400 })
+    }
+
+    const updateData: Record<string, unknown> = {
+      name: name.trim(),
+      fatherName: fatherName.trim(),
+    }
+
+    if (motherName !== undefined) updateData.motherName = motherName.trim()
+    if (phone !== undefined) updateData.phone = phone.trim()
+    if (address !== undefined) updateData.address = address.trim()
+    if (countNumber !== undefined && countNumber !== '') updateData.countNumber = Number(countNumber)
+    if (category !== undefined) {
+      const validCategories = ['general', 'obc', 'sc', 'st']
+      updateData.category = validCategories.includes(String(category).toLowerCase())
+        ? String(category).toLowerCase()
+        : null
+    }
+
+    const participant = await Participant.findByIdAndUpdate(
+      params.id,
+      updateData,
+      { new: true }
+    ).select('-qrTokenHash')
+
+    if (!participant) {
+      return NextResponse.json({ error: 'प्रतिभागी रिकॉर्ड नहीं मिला।' }, { status: 404 })
+    }
+
+    return NextResponse.json({ participant })
+  } catch (err: unknown) {
+    console.error('Participant update error:', err)
+    return NextResponse.json(
+      { error: 'विवरण अपडेट करने में समस्या आई। कृपया वेबसाइट वाले (डेवलपर) से संपर्क करें।' },
+      { status: 500 }
+    )
   }
-
-  const updateData: Record<string, unknown> = {
-    name: name.trim(),
-    fatherName: fatherName.trim(),
-  }
-
-  if (motherName !== undefined) updateData.motherName = motherName.trim()
-  if (phone !== undefined) updateData.phone = phone.trim()
-  if (address !== undefined) updateData.address = address.trim()
-  if (countNumber !== undefined && countNumber !== '') updateData.countNumber = Number(countNumber)
-  if (category !== undefined) {
-    const validCategories = ['general', 'obc', 'sc', 'st']
-    updateData.category = validCategories.includes(String(category).toLowerCase())
-      ? String(category).toLowerCase()
-      : null
-  }
-
-  const participant = await Participant.findByIdAndUpdate(
-    params.id,
-    updateData,
-    { new: true }
-  ).select('-qrTokenHash')
-
-  if (!participant) {
-    return NextResponse.json({ error: 'Participant not found' }, { status: 404 })
-  }
-
-  return NextResponse.json({ participant })
 }
 
 export async function PATCH(

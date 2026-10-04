@@ -30,6 +30,7 @@ export default function RegisterParticipantPage() {
   const [category, setCategory] = useState<'general' | 'obc' | 'sc' | 'st'>('general')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [isTechnicalError, setIsTechnicalError] = useState(false)
   const [success, setSuccess] = useState<{
     _id: string
     participantId: string
@@ -47,9 +48,39 @@ export default function RegisterParticipantPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+    setIsTechnicalError(false)
 
-    if (phone.trim() && !/^\d{10}$/.test(phone.trim().replace(/\D/g, ''))) {
-      setError('कृपया सही 10 अंकों का मोबाइल नंबर दर्ज करें।')
+    if (!name.trim()) {
+      setError('कृपया बच्ची का नाम दर्ज करें।')
+      setIsTechnicalError(false)
+      return
+    }
+    if (!motherName.trim()) {
+      setError('कृपया माता जी का नाम दर्ज करें।')
+      setIsTechnicalError(false)
+      return
+    }
+    if (!fatherName.trim()) {
+      setError('कृपया पिता जी का नाम दर्ज करें।')
+      setIsTechnicalError(false)
+      return
+    }
+    if (!phone.trim()) {
+      setError('कृपया 10 अंकों का मोबाइल नंबर दर्ज करें।')
+      setIsTechnicalError(false)
+      return
+    }
+
+    const cleanPhone = phone.trim().replace(/\D/g, '')
+    if (cleanPhone.length !== 10) {
+      setError('कृपया सही 10 अंकों का मोबाइल नंबर दर्ज करें (उदा. 9893335885)।')
+      setIsTechnicalError(false)
+      return
+    }
+
+    if (countNumber && (isNaN(Number(countNumber)) || Number(countNumber) <= 0)) {
+      setError('क्रमांक एक मान्य धनात्मक संख्या (Positive Number) होना चाहिए।')
+      setIsTechnicalError(false)
       return
     }
 
@@ -62,7 +93,7 @@ export default function RegisterParticipantPage() {
           name: name.trim(),
           motherName: motherName.trim(),
           fatherName: fatherName.trim(),
-          phone: phone.trim(),
+          phone: cleanPhone,
           address: address.trim(),
           countNumber: countNumber ? Number(countNumber) : undefined,
           category,
@@ -70,7 +101,8 @@ export default function RegisterParticipantPage() {
       })
       const data = await res.json()
       if (!res.ok) {
-        setError(data.error || 'पंजीकरण विफल रहा')
+        setError(data.error || 'पंजीकरण करने में समस्या आई। कृपया वेबसाइट वाले से संपर्क करें।')
+        setIsTechnicalError(Boolean(data.isTechnicalError || res.status >= 500))
         return
       }
 
@@ -95,7 +127,8 @@ export default function RegisterParticipantPage() {
         dataUrl: qrData.dataUrl,
       })
     } catch {
-      setError('नेटवर्क त्रुटि। कृपया पुनः प्रयास करें।')
+      setError('इंटरनेट कनेक्शन या सर्वर में समस्या आई है। कृपया इंटरनेट जांचें या वेबसाइट वाले (तकनीकी टीम) से संपर्क करें।')
+      setIsTechnicalError(true)
     } finally {
       setLoading(false)
     }
@@ -347,9 +380,28 @@ export default function RegisterParticipantPage() {
               </div>
 
               {error && (
-                <div className="flex items-center gap-2.5 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm animate-in fade-in">
-                  <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
-                  <span>{error}</span>
+                <div className="bg-red-50/90 border-2 border-red-200 rounded-2xl p-4 sm:p-5 text-red-900 animate-in fade-in">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-red-100 rounded-xl text-red-600 shrink-0 mt-0.5">
+                      <AlertCircle className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-sm font-bold text-red-900 mb-1">
+                        पंजीकरण विफल (Registration Error)
+                      </h3>
+                      <p className="text-xs sm:text-sm text-red-800 leading-relaxed font-medium">
+                        {error}
+                      </p>
+                      {isTechnicalError && (
+                        <div className="mt-3 pt-3 border-t border-red-200/80 flex items-center gap-2 text-xs font-semibold text-red-700 bg-red-100/60 p-2.5 rounded-xl">
+                          <span>📞</span>
+                          <span>
+                            यदि यह समस्या पुनः आती है, तो कृपया <strong>वेबसाइट वाले (तकनीकी टीम / डेवलपर)</strong> से संपर्क करें।
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
 

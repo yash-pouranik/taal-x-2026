@@ -111,62 +111,178 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions)
-  if (!session || session.user.role !== 'admin') {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session) {
+      return NextResponse.json(
+        { error: 'सत्र समाप्त हो गया है। कृपया दोबारा लॉगिन करें।' },
+        { status: 401 }
+      )
+    }
+    if (session.user.role !== 'admin') {
+      return NextResponse.json(
+        { error: 'केवल व्यवस्थापक (Admin) ही नया पंजीकरण कर सकते हैं।' },
+        { status: 403 }
+      )
+    }
+
+    try {
+      await connectDB()
+    } catch (dbErr) {
+      console.error('Database connection error in POST /api/participants:', dbErr)
+      return NextResponse.json(
+        {
+          error: 'डेटाबेस से संपर्क नहीं हो पा रहा है। कृपया वेबसाइट वाले (तकनीकी टीम) से संपर्क करें।',
+          isTechnicalError: true,
+        },
+        { status: 503 }
+      )
+    }
+
+    let body
+    try {
+      body = await req.json()
+    } catch {
+      return NextResponse.json(
+        { error: 'अमान्य डेटा प्रारूप प्राप्त हुआ। कृपया फॉर्म दोबारा भरकर सबमिट करें।' },
+        { status: 400 }
+      )
+    }
+
+    const { name, motherName, fatherName, phone, address, countNumber, category } = body
+
+    if (!name?.trim()) {
+      return NextResponse.json({ error: 'कृपया बच्ची का नाम दर्ज करें।' }, { status: 400 })
+    }
+    if (!motherName?.trim()) {
+      return NextResponse.json({ error: 'कृपया माता जी का नाम दर्ज करें।' }, { status: 400 })
+    }
+    if (!fatherName?.trim()) {
+      return NextResponse.json({ error: 'कृपया पिता जी का नाम दर्ज करें।' }, { status: 400 })
+    }
+    if (!phone?.trim()) {
+      return NextResponse.json({ error: 'कृपया 10 अंकों का मोबाइल नंबर दर्ज करें।' }, { status: 400 })
+    }
+
+    const cleanedPhone = phone.trim().replace(/\D/g, '')
+    if (cleanedPhone.length !== 10) {
+      return NextResponse.json(
+        { error: 'कृपया सही 10 अंकों का मोबाइल नंबर दर्ज करें (उदा. 9893335885)।' },
+        { status: 400 }
+      )
+    }
+
+    const validCategories = ['general', 'obc', 'sc', 'st']
+    const selectedCategory = validCategories.includes(String(category).toLowerCase())
+      ? String(category).toLowerCase()
+      : 'general'
+
+    // Generate sequential participant ID with safe fallback
+    const count = await Participant.countDocuments()
+    let participantId = `NAV-${String(count + 1).padStart(3, '0')}`
+
+    // Check if ID already exists (e.g. after imports/deletions)
+    const existingWithId = await Participant.findOne({ participantId })
+    if (existingWithId) {
+      participantId = `NAV-${String(count + 2).padStart(3, '0')}`
+    }
+
+    const finalCountNumber =
+      countNumber !== undefined && countNumber !== null && String(countNumber).trim() !== ''
+        ? Number(countNumber)
+        : count + 1
+
+    if (countNumber && (isNaN(Number(countNumber)) || Number(countNumber) <= 0)) {
+      return NextResponse.json(
+        { error: 'क्रमांक केवल धनात्मक संख्या (Positive Number) होना चाहिए।' },
+        { status: 400 }
+      )
+    }
+
+    // Generate QR token
+    const rawToken = generateQRToken()
+    const qrTokenHash = hashToken(rawToken)
+
+    const participant = new Participant({
+      participantId,
+      countNumber: isNaN(finalCountNumber) ? count + 1 : finalCountNumber,
+      name: name.trim(),
+      motherName: motherName.trim(),
+      fatherName: fatherName.trim(),
+      phone: cleanedPhone,
+      address: address?.trim() || '',
+      category: selectedCategory,
+      qrToken: rawToken,
+      qrTokenHash,
+    })
+
+    await participant.save()
+
+    return NextResponse.json(
+      {
+        participant: { ...participant.toObject(), _id: participant._id.toString() },
+        rawToken,
+      },
+      { status: 201 }
+    )
+  } catch (err: unknown) {
+    console.error('Participant creation error:', err)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const errorObj = err as any
+
+    // Handle Mongo duplicate key error (E11000)
+    if (errorObj?.code === 11000) {
+      const keyPattern = errorObj.keyPattern || {}
+      if (keyPattern.participantId) {
+        return NextResponse.json(
+          {
+            error: 'यह प्रतिभागी कोड (ID) पहले से पंजीकृत है। कृपया दोबारा सबमिट करें या वेबसाइट वाले से संपर्क करें।',
+            isTechnicalError: true,
+          },
+          { status: 409 }
+        )
+      }
+      if (keyPattern.qrTokenHash) {
+        return NextResponse.json(
+          {
+            error: 'QR कोड जनरेशन में टकराव हुआ। कृपया एक बार फिर सबमिट करें।',
+            isTechnicalError: false,
+          },
+          { status: 409 }
+        )
+      }
+      return NextResponse.json(
+        {
+          error: 'यह विवरण पहले से डेटाबेस में मौजूद है। कृपया वेबसाइट वाले से संपर्क करें।',
+          isTechnicalError: true,
+        },
+        { status: 409 }
+      )
+    }
+
+    // Handle Mongoose Validation Error
+    if (errorObj?.name === 'ValidationError') {
+      const messages = Object.values(errorObj.errors || {})
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .map((e: any) => e.message)
+        .join(', ')
+      return NextResponse.json(
+        {
+          error: `डेटा सत्यापन में त्रुटि: ${messages || 'कृपया सभी फ़ील्ड्स सही भरें।'}`,
+          isTechnicalError: false,
+        },
+        { status: 400 }
+      )
+    }
+
+    // Default Fallback
+    return NextResponse.json(
+      {
+        error: 'सर्वर पर अप्रत्याशित समस्या आई है। कृपया वेबसाइट वाले (डेवलपर) से संपर्क करें।',
+        details: errorObj?.message || 'Internal Server Error',
+        isTechnicalError: true,
+      },
+      { status: 500 }
+    )
   }
-
-  await connectDB()
-  const body = await req.json()
-  const { name, motherName, fatherName, phone, address, countNumber, category } = body
-
-  if (!name?.trim()) {
-    return NextResponse.json({ error: 'बच्ची का नाम आवश्यक है (Name is required)' }, { status: 400 })
-  }
-  if (!motherName?.trim()) {
-    return NextResponse.json({ error: 'माता जी का नाम आवश्यक है (Mother name is required)' }, { status: 400 })
-  }
-  if (!fatherName?.trim()) {
-    return NextResponse.json({ error: 'पिता जी का नाम आवश्यक है (Father name is required)' }, { status: 400 })
-  }
-  if (!phone?.trim()) {
-    return NextResponse.json({ error: 'फोन नंबर आवश्यक है (Phone number is required)' }, { status: 400 })
-  }
-
-  const validCategories = ['general', 'obc', 'sc', 'st']
-  const selectedCategory = validCategories.includes(String(category).toLowerCase())
-    ? String(category).toLowerCase()
-    : 'general'
-
-  // Generate sequential participant ID and countNumber
-  const count = await Participant.countDocuments()
-  const participantId = `NAV-${String(count + 1).padStart(3, '0')}`
-  const finalCountNumber = countNumber !== undefined && countNumber !== null && String(countNumber).trim() !== ''
-    ? Number(countNumber)
-    : count + 1
-
-  // Generate QR token
-  const rawToken = generateQRToken()
-  const qrTokenHash = hashToken(rawToken)
-
-  const participant = new Participant({
-    participantId,
-    countNumber: isNaN(finalCountNumber) ? count + 1 : finalCountNumber,
-    name: name.trim(),
-    motherName: motherName.trim(),
-    fatherName: fatherName.trim(),
-    phone: phone.trim(),
-    address: address?.trim() || '',
-    category: selectedCategory,
-    qrToken: rawToken,
-    qrTokenHash,
-  })
-
-  await participant.save()
-
-  // Return rawToken only here — it is NEVER stored, only the hash is
-  return NextResponse.json({
-    participant: { ...participant.toObject(), _id: participant._id.toString() },
-    rawToken, // Admin uses this to generate/print the QR
-  }, { status: 201 })
 }
