@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import AdminNav from '@/components/AdminNav'
 import {
@@ -28,6 +28,10 @@ export default function RegisterParticipantPage() {
   const [address, setAddress] = useState('')
   const [countNumber, setCountNumber] = useState('')
   const [category, setCategory] = useState<'general' | 'obc' | 'sc' | 'st'>('general')
+  const [nextSuggestedInfo, setNextSuggestedInfo] = useState<{
+    nextCountNumber: number
+    nextParticipantId: string
+  } | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [isTechnicalError, setIsTechnicalError] = useState(false)
@@ -44,6 +48,17 @@ export default function RegisterParticipantPage() {
     rawToken: string
     dataUrl: string
   } | null>(null)
+
+  useEffect(() => {
+    fetch('/api/participants?checkNext=true')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.nextParticipantId) {
+          setNextSuggestedInfo(data)
+        }
+      })
+      .catch(() => {})
+  }, [success])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -347,9 +362,11 @@ export default function RegisterParticipantPage() {
               {/* Count Number & Address (2 Columns) */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="sm:col-span-1">
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
-                    काउंट नंबर (Count No.)
-                  </label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                      काउंट नंबर (Count No.)
+                    </label>
+                  </div>
                   <div className="relative">
                     <Hash className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                     <input
@@ -357,8 +374,21 @@ export default function RegisterParticipantPage() {
                       value={countNumber}
                       onChange={(e) => setCountNumber(e.target.value)}
                       className="w-full pl-11 pr-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all placeholder:text-slate-400 font-mono"
-                      placeholder="स्वतः सेट"
+                      placeholder={nextSuggestedInfo ? `उदा. ${nextSuggestedInfo.nextCountNumber}` : 'स्वतः सेट'}
                     />
+                  </div>
+                  <div className="mt-1.5 text-[11px]">
+                    {countNumber && !isNaN(Number(countNumber)) && Number(countNumber) > 0 ? (
+                      <span className="inline-flex items-center gap-1 font-bold text-orange-700 bg-orange-50 px-2 py-0.5 rounded-md border border-orange-200">
+                        आवंटित कोड: NAV-{String(Number(countNumber)).padStart(3, '0')} (1:1 मैप)
+                      </span>
+                    ) : nextSuggestedInfo ? (
+                      <span className="text-slate-500 text-[10px]">
+                        स्वतः: <strong>{nextSuggestedInfo.nextParticipantId}</strong> (#{nextSuggestedInfo.nextCountNumber})
+                      </span>
+                    ) : (
+                      <span className="text-slate-400 text-[10px]">खाली रखने पर सिस्टम स्वतः आवंटित करेगा</span>
+                    )}
                   </div>
                 </div>
 

@@ -5,11 +5,84 @@ import { connectDB } from '@/lib/db'
 import Participant from '@/models/Participant'
 import { generateQRToken, hashToken } from '@/lib/qr'
 
+/**
+ * Safely computes the next available sequence number.
+ * Directly maps 1:1 with participantId: NAV-{countNumber}.
+ * Uses MongoDB aggregation to find true numeric maximum across both
+ * `countNumber` and numeric component of `participantId`.
+ */
+async function getNextAvailableCountNumber(): Promise<number> {
+  const maxAgg = await Participant.aggregate([
+    {
+      $project: {
+        numFromId: {
+          $convert: {
+            input: {
+              $arrayElemAt: [{ $split: ['$participantId', '-'] }, 1],
+            },
+            to: 'int',
+            onError: 0,
+            onNull: 0,
+          },
+        },
+        numFromCount: {
+          $convert: {
+            input: '$countNumber',
+            to: 'int',
+            onError: 0,
+            onNull: 0,
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        effectiveNum: { $max: ['$numFromId', '$numFromCount'] },
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        maxNum: { $max: '$effectiveNum' },
+      },
+    },
+  ])
+
+  const highestExistingNum =
+    maxAgg.length > 0 && typeof maxAgg[0].maxNum === 'number'
+      ? maxAgg[0].maxNum
+      : 0
+
+  let candidateNum = Math.max(1, highestExistingNum + 1)
+  let candidateId = `NAV-${String(candidateNum).padStart(3, '0')}`
+
+  // Ensure candidate number and ID are not already taken by any record
+  while (
+    await Participant.exists({
+      $or: [{ participantId: candidateId }, { countNumber: candidateNum }],
+    })
+  ) {
+    candidateNum++
+    candidateId = `NAV-${String(candidateNum).padStart(3, '0')}`
+  }
+
+  return candidateNum
+}
+
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   await connectDB()
+
+  if (req.nextUrl.searchParams.get('checkNext') === 'true') {
+    const nextNum = await getNextAvailableCountNumber()
+    return NextResponse.json({
+      nextCountNumber: nextNum,
+      nextParticipantId: `NAV-${String(nextNum).padStart(3, '0')}`,
+    })
+  }
+
   const q = (req.nextUrl.searchParams.get('q') || '').trim()
   const page = Math.max(1, parseInt(req.nextUrl.searchParams.get('page') || '1'))
   const limitParam = req.nextUrl.searchParams.get('limit')
@@ -177,50 +250,88 @@ export async function POST(req: NextRequest) {
       ? String(category).toLowerCase()
       : 'general'
 
-    // Generate sequential participant ID with safe fallback
-    const count = await Participant.countDocuments()
-    let participantId = `NAV-${String(count + 1).padStart(3, '0')}`
+    let finalCountNumber: number
+    let participantId: string
 
-    // Check if ID already exists (e.g. after imports/deletions)
-    const existingWithId = await Participant.findOne({ participantId })
-    if (existingWithId) {
-      participantId = `NAV-${String(count + 2).padStart(3, '0')}`
-    }
+    if (countNumber !== undefined && countNumber !== null && String(countNumber).trim() !== '') {
+      const parsed = Number(countNumber)
+      if (isNaN(parsed) || !Number.isInteger(parsed) || parsed <= 0) {
+        return NextResponse.json(
+          { error: 'क्रमांक केवल धनात्मक संख्या (Positive Number) होना चाहिए।' },
+          { status: 400 }
+        )
+      }
 
-    const finalCountNumber =
-      countNumber !== undefined && countNumber !== null && String(countNumber).trim() !== ''
-        ? Number(countNumber)
-        : count + 1
+      finalCountNumber = parsed
+      // 1:1 Direct mapping: NAV-{countNumber}
+      participantId = `NAV-${String(finalCountNumber).padStart(3, '0')}`
 
-    if (countNumber && (isNaN(Number(countNumber)) || Number(countNumber) <= 0)) {
-      return NextResponse.json(
-        { error: 'क्रमांक केवल धनात्मक संख्या (Positive Number) होना चाहिए।' },
-        { status: 400 }
-      )
+      // Check if this countNumber OR participantId is already taken
+      const existing = await Participant.findOne({
+        $or: [
+          { countNumber: finalCountNumber },
+          { participantId }
+        ]
+      }).select('name fatherName countNumber participantId')
+
+      if (existing) {
+        return NextResponse.json(
+          {
+            error: `क्रमांक ${finalCountNumber} (${participantId}) पहले से '${existing.name}' (पिता: '${existing.fatherName}') के नाम पर पंजीकृत है। कृपया कोई दूसरा क्रमांक दर्ज करें, या इसे खाली छोड़ दें ताकि सिस्टम अपने आप अगला उपलब्ध क्रमांक दे सके।`,
+            isTechnicalError: false,
+          },
+          { status: 409 }
+        )
+      }
+    } else {
+      // Auto-generate: directly map to the next available sequence number
+      finalCountNumber = await getNextAvailableCountNumber()
+      participantId = `NAV-${String(finalCountNumber).padStart(3, '0')}`
     }
 
     // Generate QR token
     const rawToken = generateQRToken()
     const qrTokenHash = hashToken(rawToken)
 
-    const participant = new Participant({
-      participantId,
-      countNumber: isNaN(finalCountNumber) ? count + 1 : finalCountNumber,
-      name: name.trim(),
-      motherName: motherName.trim(),
-      fatherName: fatherName.trim(),
-      phone: cleanedPhone,
-      address: address?.trim() || '',
-      category: selectedCategory,
-      qrToken: rawToken,
-      qrTokenHash,
-    })
+    const isAutoGenerated = !countNumber || String(countNumber).trim() === ''
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let savedParticipant: any = null
+    let attempts = 0
+    const maxAttempts = isAutoGenerated ? 10 : 1
 
-    await participant.save()
+    while (attempts < maxAttempts) {
+      attempts++
+      try {
+        const participant = new Participant({
+          participantId,
+          countNumber: finalCountNumber,
+          name: name.trim(),
+          motherName: motherName.trim(),
+          fatherName: fatherName.trim(),
+          phone: cleanedPhone,
+          address: address?.trim() || '',
+          category: selectedCategory,
+          qrToken: rawToken,
+          qrTokenHash,
+        })
+
+        await participant.save()
+        savedParticipant = participant
+        break
+      } catch (saveErr: any) {
+        // If auto-generated and hit a duplicate key (e.g. concurrent submission), auto-increment to next free ID and retry
+        if (isAutoGenerated && saveErr?.code === 11000 && attempts < maxAttempts) {
+          finalCountNumber = await getNextAvailableCountNumber()
+          participantId = `NAV-${String(finalCountNumber).padStart(3, '0')}`
+          continue
+        }
+        throw saveErr
+      }
+    }
 
     return NextResponse.json(
       {
-        participant: { ...participant.toObject(), _id: participant._id.toString() },
+        participant: { ...savedParticipant.toObject(), _id: savedParticipant._id.toString() },
         rawToken,
       },
       { status: 201 }
@@ -233,11 +344,20 @@ export async function POST(req: NextRequest) {
     // Handle Mongo duplicate key error (E11000)
     if (errorObj?.code === 11000) {
       const keyPattern = errorObj.keyPattern || {}
-      if (keyPattern.participantId) {
+      if (keyPattern.participantId || errorObj.message?.includes('participantId')) {
         return NextResponse.json(
           {
-            error: 'यह प्रतिभागी कोड (ID) पहले से पंजीकृत है। कृपया दोबारा सबमिट करें या वेबसाइट वाले से संपर्क करें।',
-            isTechnicalError: true,
+            error: 'यह प्रतिभागी कोड (ID) पहले से पंजीकृत है। कृपया कोई दूसरा क्रमांक दर्ज करें या इसे खाली छोड़ दें।',
+            isTechnicalError: false,
+          },
+          { status: 409 }
+        )
+      }
+      if (keyPattern.countNumber || errorObj.message?.includes('countNumber')) {
+        return NextResponse.json(
+          {
+            error: 'यह क्रमांक पहले से पंजीकृत है। कृपया कोई दूसरा क्रमांक दर्ज करें या इसे खाली छोड़ दें।',
+            isTechnicalError: false,
           },
           { status: 409 }
         )
@@ -253,7 +373,7 @@ export async function POST(req: NextRequest) {
       }
       return NextResponse.json(
         {
-          error: 'यह विवरण पहले से डेटाबेस में मौजूद है। कृपया वेबसाइट वाले से संपर्क करें।',
+          error: 'यह विवरण पहले से डेटाबेस में मौजूद है। कृपया दूसरा क्रमांक चुनें।',
           isTechnicalError: true,
         },
         { status: 409 }

@@ -82,6 +82,7 @@ export default function ScannerPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const html5QrRef = useRef<any>(null)
   const isScanningRef = useRef(false)
+  const isProcessingRef = useRef(false)
 
   const [state, setState] = useState<ScanState>('scanning')
   const [verifyData, setVerifyData] = useState<VerifyResult | null>(null)
@@ -123,6 +124,19 @@ export default function ScannerPage() {
   // Safe scanner starter
   async function startCamera() {
     try {
+      // Check for secure context (Camera requires HTTPS or localhost)
+      if (
+        typeof window !== 'undefined' &&
+        !window.isSecureContext &&
+        window.location.hostname !== 'localhost' &&
+        window.location.hostname !== '127.0.0.1'
+      ) {
+        setCameraError(
+          'कैमरा केवल सुरक्षित (HTTPS) कनेक्शन पर काम करता है। कृपया HTTPS से वेबसाइट खोलें या एडमिन से संपर्क करें।'
+        )
+        return
+      }
+
       const { Html5Qrcode } = await import('html5-qrcode')
 
       if (!html5QrRef.current) {
@@ -134,7 +148,7 @@ export default function ScannerPage() {
       }
 
       await html5QrRef.current.start(
-        { facingMode: 'environment' },
+        { facingMode: { ideal: 'environment' } },
         { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 },
         (token: string) => {
           onQRScanned(token)
@@ -143,12 +157,13 @@ export default function ScannerPage() {
       )
 
       isScanningRef.current = true
+      isProcessingRef.current = false
       setCameraError(null)
     } catch (err) {
       console.error('Camera start error:', err)
       isScanningRef.current = false
       setCameraError(
-        'Camera permission is required to scan passes. Please grant camera permission in your browser and tap Retry.'
+        'पास स्कैन करने हेतु कैमरे की अनुमति आवश्यक है। कृपया अपने ब्राउज़र में कैमरा चालू करें और पुनः प्रयास करें।'
       )
     }
   }
@@ -167,7 +182,8 @@ export default function ScannerPage() {
   }, [state])
 
   async function onQRScanned(token: string) {
-    if (!token) return
+    if (!token || isProcessingRef.current) return
+    isProcessingRef.current = true
 
     // Stop camera immediately
     await stopCamera()
@@ -237,6 +253,7 @@ export default function ScannerPage() {
   }
 
   function reset() {
+    isProcessingRef.current = false
     setVerifyData(null)
     setErrorData(null)
     setSuccessData(null)

@@ -18,10 +18,30 @@ export interface EventConfigDates {
 }
 
 /**
- * Returns the current date in IST as a "YYYY-MM-DD" string.
+ * Returns the current business date in IST as a "YYYY-MM-DD" string.
  * This is the canonical business date — used for all claim operations.
+ *
+ * Midnight Crossing Rule:
+ * Garba & distribution events routinely run late into the night past midnight (e.g. 12:30 AM - 3:30 AM).
+ * If the current time in IST is before 4:00 AM (00:00 to 03:59:59 IST),
+ * it is treated as part of the previous evening's festival day so that entry, exit,
+ * and distribution claims do not desynchronize or fail across midnight.
  */
-export function getCurrentIndiaDate(): string {
+export function getCurrentIndiaDate(cutoffHour: number = 4): string {
+  const nowUTC = new Date()
+  const nowIST = toZonedTime(nowUTC, IST_TIMEZONE)
+
+  if (nowIST.getHours() < cutoffHour) {
+    nowIST.setDate(nowIST.getDate() - 1)
+  }
+
+  return format(nowIST, 'yyyy-MM-dd', { timeZone: IST_TIMEZONE })
+}
+
+/**
+ * Returns raw calendar date without midnight cutoff (if ever needed).
+ */
+export function getCalendarIndiaDate(): string {
   const nowUTC = new Date()
   const nowIST = toZonedTime(nowUTC, IST_TIMEZONE)
   return format(nowIST, 'yyyy-MM-dd', { timeZone: IST_TIMEZONE })

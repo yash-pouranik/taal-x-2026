@@ -18,7 +18,11 @@ export async function POST(req: NextRequest) {
   const { token } = body
 
   if (!token || typeof token !== 'string' || token.length !== 64) {
-    return NextResponse.json({ error: 'Invalid QR code' }, { status: 400 })
+    return NextResponse.json({
+      valid: false,
+      error: 'INVALID_QR_FORMAT',
+      message: 'यह डांडिया पास का मान्य QR कोड नहीं है। कृपया सही पास स्कैन करें।',
+    }, { status: 400 })
   }
 
   // Step 1: Hash and look up
@@ -29,7 +33,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       valid: false,
       error: 'INVALID_QR',
-      message: 'This QR code is not registered in the system.',
+      message: 'यह QR कोड सिस्टम में पंजीकृत नहीं है।',
     }, { status: 404 })
   }
 
@@ -38,7 +42,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       valid: false,
       error: 'CANCELLED',
-      message: 'This participant registration has been cancelled. Prop cannot be issued.',
+      message: 'इस प्रतिभागी का पास निरस्त (Cancelled) किया जा चुका है। सामग्री वितरण संभव नहीं है।',
       participant: {
         name: participant.name,
         fatherName: participant.fatherName,
@@ -53,14 +57,14 @@ export async function POST(req: NextRequest) {
 
   if (!status.active) {
     const messages: Record<string, string> = {
-      NOT_STARTED: 'Distribution has not started yet.',
-      ENDED: 'Distribution has ended.',
-      NO_CONFIG: 'Event dates are not configured. Please contact the administrator.',
+      NOT_STARTED: 'वितरण अभी प्रारंभ नहीं हुआ है।',
+      ENDED: 'वितरण की अवधि समाप्त हो चुकी है।',
+      NO_CONFIG: 'कार्यक्रम की तिथियां सेट नहीं हैं। कृपया एडमिन से संपर्क करें।',
     }
     return NextResponse.json({
       valid: false,
       error: status.reason,
-      message: messages[status.reason] || 'Distribution is not active.',
+      message: messages[status.reason] || 'वितरण अभी सक्रिय नहीं है।',
       participant: { name: participant.name, fatherName: participant.fatherName, participantId: participant.participantId },
     }, { status: 400 })
   }

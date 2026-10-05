@@ -88,6 +88,7 @@ ClaimSchema.index(
 
 // Index for fast daily stats queries
 ClaimSchema.index({ distributionDate: 1 })
+ClaimSchema.index({ distributionDate: 1, navratriDay: 1 })
 
 // Index for participant history
 ClaimSchema.index({ participantId: 1 })

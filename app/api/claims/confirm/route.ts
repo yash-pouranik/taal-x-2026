@@ -55,35 +55,40 @@ export async function POST(req: NextRequest) {
   const staffObjectId = new Types.ObjectId(session.user.id)
 
   try {
-    let claim = await Claim.findOne({
-      participantId: participant._id,
-      distributionDate: todayDate,
-    })
-
     if (itemType === 'entry') {
-      if (claim && claim.entryTime) {
+      const existing = await Claim.findOne({
+        participantId: participant._id,
+        distributionDate: todayDate,
+      })
+
+      if (existing && existing.entryTime) {
         return NextResponse.json({
           error: 'ALREADY_ENTERED',
           message: 'इस प्रतिभागी का प्रवेश पहले ही दर्ज हो चुका है।',
         }, { status: 409 })
       }
 
-      if (claim) {
-        claim.entryTime = claimedAt
-        await claim.save()
-      } else {
-        claim = new Claim({
+      const claim = await Claim.findOneAndUpdate(
+        {
           participantId: participant._id,
           distributionDate: todayDate,
-          navratriDay: day,
-          claimedAt,
-          claimedByStaffId: staffObjectId,
-          entryTime: claimedAt,
-          giftClaimed: false,
-          foodClaimed: false,
-        })
-        await claim.save()
-      }
+        },
+        {
+          $set: {
+            entryTime: claimedAt,
+            claimedAt,
+            claimedByStaffId: staffObjectId,
+            navratriDay: day,
+          },
+          $setOnInsert: {
+            participantId: participant._id,
+            distributionDate: todayDate,
+            giftClaimed: false,
+            foodClaimed: false,
+          },
+        },
+        { upsert: true, new: true }
+      )
 
       return NextResponse.json({
         success: true,
@@ -101,22 +106,56 @@ export async function POST(req: NextRequest) {
     }
 
     if (itemType === 'exit') {
-      if (!claim || !claim.entryTime) {
-        return NextResponse.json({
-          error: 'ENTRY_REQUIRED',
-          message: 'प्रस्थान दर्ज करने से पहले प्रवेश दर्ज होना आवश्यक है।',
-        }, { status: 400 })
-      }
+      const updatedClaim = await Claim.findOneAndUpdate(
+        {
+          participantId: participant._id,
+          distributionDate: todayDate,
+          entryTime: { $exists: true, $ne: null },
+          $or: [{ exitTime: { $exists: false } }, { exitTime: null }],
+        },
+        {
+          $set: { exitTime: claimedAt },
+        },
+        { new: true }
+      )
 
-      if (claim.exitTime) {
-        return NextResponse.json({
-          error: 'ALREADY_EXITED',
-          message: 'इस प्रतिभागी का प्रस्थान पहले ही दर्ज हो चुका है।',
-        }, { status: 409 })
-      }
+      if (!updatedClaim) {
+        const existing = await Claim.findOne({
+          participantId: participant._id,
+          distributionDate: todayDate,
+        })
 
-      claim.exitTime = claimedAt
-      await claim.save()
+        if (!existing || !existing.entryTime) {
+          return NextResponse.json({
+            error: 'ENTRY_REQUIRED',
+            message: 'प्रस्थान दर्ज करने से पहले प्रवेश दर्ज होना आवश्यक है।',
+          }, { status: 400 })
+        }
+
+        if (existing.exitTime) {
+          const diff = Date.now() - new Date(existing.exitTime).getTime()
+          if (diff < 15000) {
+            return NextResponse.json({
+              success: true,
+              message: 'प्रस्थान (Exit) सफलतापूर्वक दर्ज किया गया।',
+              claim: {
+                participant: { name: participant.name, fatherName: participant.fatherName, participantId: participant.participantId },
+                navratriDay: day,
+                distributionDate: todayDate,
+                itemType: 'exit',
+                itemLabel: 'प्रस्थान (Exit Out)',
+                exitTime: toISTString(existing.exitTime),
+                claimedAt: toISTString(existing.exitTime),
+              },
+            }, { status: 200 })
+          }
+
+          return NextResponse.json({
+            error: 'ALREADY_EXITED',
+            message: 'इस प्रतिभागी का प्रस्थान पहले ही दर्ज हो चुका है।',
+          }, { status: 409 })
+        }
+      }
 
       return NextResponse.json({
         success: true,
@@ -134,80 +173,235 @@ export async function POST(req: NextRequest) {
     }
 
     // Gift, Food or Both require entry to have been done first!
-    if (!claim || !claim.entryTime) {
+    if (itemType === 'gift') {
+      const updatedClaim = await Claim.findOneAndUpdate(
+        {
+          participantId: participant._id,
+          distributionDate: todayDate,
+          entryTime: { $exists: true, $ne: null },
+          giftClaimed: false,
+        },
+        {
+          $set: {
+            giftClaimed: true,
+            giftClaimedAt: claimedAt,
+            giftStaffId: staffObjectId,
+          },
+        },
+        { new: true }
+      )
+
+      if (!updatedClaim) {
+        const existing = await Claim.findOne({
+          participantId: participant._id,
+          distributionDate: todayDate,
+        })
+
+        if (!existing || !existing.entryTime) {
+          return NextResponse.json({
+            error: 'ENTRY_REQUIRED',
+            message: 'कृपया पहले प्रवेश (Entry) दर्ज करें। बिना प्रवेश के उपहार या भोजन नहीं दिया जा सकता।',
+          }, { status: 400 })
+        }
+
+        if (existing.giftClaimed) {
+          const diff = existing.giftClaimedAt ? Date.now() - new Date(existing.giftClaimedAt).getTime() : 999999
+          if (diff < 15000) {
+            return NextResponse.json({
+              success: true,
+              message: 'उपहार / प्रॉप सफलतापूर्वक वितरित किया गया।',
+              claim: {
+                participant: { name: participant.name, fatherName: participant.fatherName, participantId: participant.participantId },
+                navratriDay: day,
+                distributionDate: todayDate,
+                itemType: 'gift',
+                itemLabel: 'उपहार / प्रॉप',
+                giftClaimed: true,
+                giftClaimedAt: toISTString(existing.giftClaimedAt!),
+                claimedAt: toISTString(existing.giftClaimedAt!),
+              },
+            }, { status: 200 })
+          }
+
+          return NextResponse.json({
+            error: 'ALREADY_CLAIMED',
+            message: 'उपहार / प्रॉप पहले ही दिया जा चुका है।',
+          }, { status: 409 })
+        }
+      }
+
       return NextResponse.json({
-        error: 'ENTRY_REQUIRED',
-        message: 'कृपया पहले प्रवेश (Entry) दर्ज करें। बिना प्रवेश के उपहार या भोजन नहीं दिया जा सकता।',
-      }, { status: 400 })
+        success: true,
+        message: 'उपहार / प्रॉप सफलतापूर्वक वितरित किया गया।',
+        claim: {
+          participant: { name: participant.name, fatherName: participant.fatherName, participantId: participant.participantId },
+          navratriDay: day,
+          distributionDate: todayDate,
+          itemType: 'gift',
+          itemLabel: 'उपहार / प्रॉप',
+          giftClaimed: true,
+          giftClaimedAt: toISTString(claimedAt),
+          claimedAt: toISTString(claimedAt),
+        },
+      }, { status: 201 })
     }
 
-    // Existing claim: update specific item(s)
-    if (itemType === 'gift') {
-      if (claim.giftClaimed) {
-        return NextResponse.json({
-          error: 'ALREADY_CLAIMED',
-          message: 'उपहार / प्रॉप पहले ही दिया जा चुका है।',
-        }, { status: 409 })
+    if (itemType === 'food') {
+      const updatedClaim = await Claim.findOneAndUpdate(
+        {
+          participantId: participant._id,
+          distributionDate: todayDate,
+          entryTime: { $exists: true, $ne: null },
+          foodClaimed: false,
+        },
+        {
+          $set: {
+            foodClaimed: true,
+            foodClaimedAt: claimedAt,
+            foodStaffId: staffObjectId,
+          },
+        },
+        { new: true }
+      )
+
+      if (!updatedClaim) {
+        const existing = await Claim.findOne({
+          participantId: participant._id,
+          distributionDate: todayDate,
+        })
+
+        if (!existing || !existing.entryTime) {
+          return NextResponse.json({
+            error: 'ENTRY_REQUIRED',
+            message: 'कृपया पहले प्रवेश (Entry) दर्ज करें। बिना प्रवेश के उपहार या भोजन नहीं दिया जा सकता।',
+          }, { status: 400 })
+        }
+
+        if (existing.foodClaimed) {
+          const diff = existing.foodClaimedAt ? Date.now() - new Date(existing.foodClaimedAt).getTime() : 999999
+          if (diff < 15000) {
+            return NextResponse.json({
+              success: true,
+              message: 'भोजन पैकेट सफलतापूर्वक वितरित किया गया।',
+              claim: {
+                participant: { name: participant.name, fatherName: participant.fatherName, participantId: participant.participantId },
+                navratriDay: day,
+                distributionDate: todayDate,
+                itemType: 'food',
+                itemLabel: 'भोजन पैकेट',
+                foodClaimed: true,
+                foodClaimedAt: toISTString(existing.foodClaimedAt!),
+                claimedAt: toISTString(existing.foodClaimedAt!),
+              },
+            }, { status: 200 })
+          }
+
+          return NextResponse.json({
+            error: 'ALREADY_CLAIMED',
+            message: 'भोजन पैकेट पहले ही दिया जा चुका है।',
+          }, { status: 409 })
+        }
       }
-      claim.giftClaimed = true
-      claim.giftClaimedAt = claimedAt
-      claim.giftStaffId = staffObjectId
-    } else if (itemType === 'food') {
-      if (claim.foodClaimed) {
+
+      return NextResponse.json({
+        success: true,
+        message: 'भोजन पैकेट सफलतापूर्वक वितरित किया गया।',
+        claim: {
+          participant: { name: participant.name, fatherName: participant.fatherName, participantId: participant.participantId },
+          navratriDay: day,
+          distributionDate: todayDate,
+          itemType: 'food',
+          itemLabel: 'भोजन पैकेट',
+          foodClaimed: true,
+          foodClaimedAt: toISTString(claimedAt),
+          claimedAt: toISTString(claimedAt),
+        },
+      }, { status: 201 })
+    }
+
+    // Default: 'both'
+    const updatedClaim = await Claim.findOneAndUpdate(
+      {
+        participantId: participant._id,
+        distributionDate: todayDate,
+        entryTime: { $exists: true, $ne: null },
+        $or: [{ giftClaimed: false }, { foodClaimed: false }],
+      },
+      {
+        $set: {
+          giftClaimed: true,
+          giftClaimedAt: claimedAt,
+          giftStaffId: staffObjectId,
+          foodClaimed: true,
+          foodClaimedAt: claimedAt,
+          foodStaffId: staffObjectId,
+        },
+      },
+      { new: true }
+    )
+
+    if (!updatedClaim) {
+      const existing = await Claim.findOne({
+        participantId: participant._id,
+        distributionDate: todayDate,
+      })
+
+      if (!existing || !existing.entryTime) {
         return NextResponse.json({
-          error: 'ALREADY_CLAIMED',
-          message: 'भोजन पैकेट पहले ही दिया जा चुका है।',
-        }, { status: 409 })
+          error: 'ENTRY_REQUIRED',
+          message: 'कृपया पहले प्रवेश (Entry) दर्ज करें। बिना प्रवेश के उपहार या भोजन नहीं दिया जा सकता।',
+        }, { status: 400 })
       }
-      claim.foodClaimed = true
-      claim.foodClaimedAt = claimedAt
-      claim.foodStaffId = staffObjectId
-    } else {
-      // 'both'
-      if (claim.giftClaimed && claim.foodClaimed) {
+
+      if (existing.giftClaimed && existing.foodClaimed) {
+        const diff = existing.giftClaimedAt ? Date.now() - new Date(existing.giftClaimedAt).getTime() : 999999
+        if (diff < 15000) {
+          return NextResponse.json({
+            success: true,
+            message: 'उपहार व भोजन पैकेट सफलतापूर्वक वितरित किया गया।',
+            claim: {
+              participant: { name: participant.name, fatherName: participant.fatherName, participantId: participant.participantId },
+              navratriDay: day,
+              distributionDate: todayDate,
+              itemType: 'both',
+              itemLabel: 'उपहार व भोजन पैकेट',
+              giftClaimed: true,
+              giftClaimedAt: toISTString(existing.giftClaimedAt!),
+              foodClaimed: true,
+              foodClaimedAt: toISTString(existing.foodClaimedAt!),
+              claimedAt: toISTString(existing.giftClaimedAt!),
+            },
+          }, { status: 200 })
+        }
+
         return NextResponse.json({
           error: 'ALREADY_CLAIMED',
           message: 'उपहार और भोजन पैकेट दोनों पहले ही दिए जा चुके हैं।',
         }, { status: 409 })
       }
-      if (!claim.giftClaimed) {
-        claim.giftClaimed = true
-        claim.giftClaimedAt = claimedAt
-        claim.giftStaffId = staffObjectId
-      }
-      if (!claim.foodClaimed) {
-        claim.foodClaimed = true
-        claim.foodClaimedAt = claimedAt
-        claim.foodStaffId = staffObjectId
-      }
     }
-
-    await claim.save()
-
-    const itemLabel = itemType === 'both' ? 'उपहार व भोजन पैकेट' : itemType === 'gift' ? 'उपहार / प्रॉप' : 'भोजन पैकेट'
 
     return NextResponse.json({
       success: true,
-      message: `${itemLabel} सफलतापूर्वक वितरित किया गया।`,
+      message: 'उपहार व भोजन पैकेट सफलतापूर्वक वितरित किया गया।',
       claim: {
         participant: { name: participant.name, fatherName: participant.fatherName, participantId: participant.participantId },
         navratriDay: day,
         distributionDate: todayDate,
-        itemType,
-        itemLabel,
-        giftClaimed: claim.giftClaimed,
-        giftClaimedAt: claim.giftClaimedAt ? toISTString(claim.giftClaimedAt) : undefined,
-        foodClaimed: claim.foodClaimed,
-        foodClaimedAt: claim.foodClaimedAt ? toISTString(claim.foodClaimedAt) : undefined,
+        itemType: 'both',
+        itemLabel: 'उपहार व भोजन पैकेट',
+        giftClaimed: true,
+        giftClaimedAt: toISTString(claimedAt),
+        foodClaimed: true,
+        foodClaimedAt: toISTString(claimedAt),
         claimedAt: toISTString(claimedAt),
       },
     }, { status: 201 })
   } catch (err: unknown) {
-    // MongoDB duplicate key error — concurrent request
     if (typeof err === 'object' && err !== null && 'code' in err && (err as { code: number }).code === 11000) {
       return NextResponse.json({
         error: 'ALREADY_CLAIMED',
-        message: 'This participant has already been marked for today.',
+        message: 'इस प्रतिभागी की यह प्रविष्टि पहले ही दर्ज हो चुकी है।',
       }, { status: 409 })
     }
     console.error('Claim confirm error:', err)

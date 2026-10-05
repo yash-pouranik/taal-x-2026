@@ -44,17 +44,24 @@ export default function BulkPrintSheetPage() {
         const data = await res.json()
         const rawList: ParticipantWithQR[] = data.participants || []
 
-        const withQRs = await Promise.all(
-          rawList.map(async (p) => {
-            const qrDataUrl = await QRCode.toDataURL(p.qrToken, {
-              errorCorrectionLevel: 'M',
-              margin: 0,
-              width: 450,
-              color: { dark: '#000000', light: '#FFFFFF' },
+        // Process in chunks to prevent memory spikes and browser UI freezing
+        const chunkSize = 30
+        const withQRs: ParticipantWithQR[] = []
+        for (let i = 0; i < rawList.length; i += chunkSize) {
+          const chunk = rawList.slice(i, i + chunkSize)
+          const processed = await Promise.all(
+            chunk.map(async (p) => {
+              const qrDataUrl = await QRCode.toDataURL(p.qrToken, {
+                errorCorrectionLevel: 'M',
+                margin: 0,
+                width: 220,
+                color: { dark: '#000000', light: '#FFFFFF' },
+              })
+              return { ...p, qrDataUrl }
             })
-            return { ...p, qrDataUrl }
-          })
-        )
+          )
+          withQRs.push(...processed)
+        }
 
         setParticipants(withQRs)
       } catch (err) {

@@ -18,6 +18,8 @@ import {
   LogOut as ExitIcon,
   RefreshCw,
   ExternalLink,
+  ArrowUpDown,
+  AlertTriangle,
 } from 'lucide-react'
 
 interface ScanRecord {
@@ -92,7 +94,78 @@ export default function DailyScansPage() {
   const [scans, setScans] = useState<ScanRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState<'all' | 'inside' | 'exited' | 'both' | 'gift_only' | 'food_only'>('all')
+  const [statusFilter, setStatusFilter] = useState<
+    'all' | 'pending_any' | 'pending_gift' | 'pending_food' | 'inside' | 'exited' | 'both' | 'gift_only' | 'food_only'
+  >('all')
+  const [sortBy, setSortBy] = useState<
+    'latest' | 'pending_wait_desc' | 'gift_diff_desc' | 'food_diff_desc' | 'inside_time_desc'
+  >('latest')
+
+  // Helper to compute time difference between entry and gift/food claim or pending duration
+  function getScanDelayMetrics(record: ScanRecord) {
+    if (!record.hasEntered || !record.entryTime) {
+      return {
+        hasEntered: false,
+        isPendingAny: false,
+        isPendingGift: false,
+        isPendingFood: false,
+        maxPendingMs: 0,
+        giftDiffMs: 0,
+        foodDiffMs: 0,
+        maxDiffMs: 0,
+        giftDiffLabel: '',
+        foodDiffLabel: '',
+      }
+    }
+
+    const entryMs = new Date(record.entryTime).getTime()
+    const referenceEndMs = record.hasExited && record.exitTime
+      ? new Date(record.exitTime).getTime()
+      : Date.now()
+
+    const isPendingGift = !record.giftClaimed
+    const isPendingFood = !record.foodClaimed
+    const isPendingAny = isPendingGift || isPendingFood
+
+    // Gift diff: if claimed, (giftClaimedAt - entryTime). If pending, (now/exit - entryTime).
+    const giftClaimMs = record.giftClaimed && record.giftClaimedAt
+      ? new Date(record.giftClaimedAt).getTime()
+      : referenceEndMs
+    const giftDiffMs = Math.max(0, giftClaimMs - entryMs)
+
+    // Food diff: if claimed, (foodClaimedAt - entryTime). If pending, (now/exit - entryTime).
+    const foodClaimMs = record.foodClaimed && record.foodClaimedAt
+      ? new Date(record.foodClaimedAt).getTime()
+      : referenceEndMs
+    const foodDiffMs = Math.max(0, foodClaimMs - entryMs)
+
+    const maxDiffMs = Math.max(giftDiffMs, foodDiffMs)
+    const maxPendingMs = isPendingAny
+      ? Math.max(isPendingGift ? giftDiffMs : 0, isPendingFood ? foodDiffMs : 0)
+      : 0
+
+    function formatDiff(ms: number) {
+      const mins = Math.floor(ms / 60000)
+      const hours = Math.floor(mins / 60)
+      const remMins = mins % 60
+      if (hours === 0) return `${mins} मि.`
+      if (remMins === 0) return `${hours} घंटे`
+      return `${hours} घं. ${remMins} मि.`
+    }
+
+    return {
+      hasEntered: true,
+      isPendingAny,
+      isPendingGift,
+      isPendingFood,
+      maxPendingMs,
+      giftDiffMs,
+      foodDiffMs,
+      maxDiffMs,
+      giftDiffLabel: formatDiff(giftDiffMs),
+      foodDiffLabel: formatDiff(foodDiffMs),
+    }
+  }
 
   async function fetchScanData(targetDate?: string) {
     setLoading(true)
@@ -136,6 +209,15 @@ export default function DailyScansPage() {
 
     if (!matchesSearch) return false
 
+    if (statusFilter === 'pending_any') {
+      return record.hasEntered && (!record.giftClaimed || !record.foodClaimed)
+    }
+    if (statusFilter === 'pending_gift') {
+      return record.hasEntered && !record.giftClaimed
+    }
+    if (statusFilter === 'pending_food') {
+      return record.hasEntered && !record.foodClaimed
+    }
     if (statusFilter === 'inside') {
       return record.isInside
     }
@@ -155,9 +237,46 @@ export default function DailyScansPage() {
     return true
   })
 
+  // Sorted scans based on chosen criteria
+  const sortedAndFilteredScans = [...filteredScans].sort((a, b) => {
+    const metricsA = getScanDelayMetrics(a)
+    const metricsB = getScanDelayMetrics(b)
+
+    if (sortBy === 'pending_wait_desc') {
+      // Prioritize records where items are still pending, highest wait time first
+      if (metricsA.isPendingAny && !metricsB.isPendingAny) return -1
+      if (!metricsA.isPendingAny && metricsB.isPendingAny) return 1
+      return metricsB.maxPendingMs - metricsA.maxPendingMs
+    }
+
+    if (sortBy === 'gift_diff_desc') {
+      return metricsB.giftDiffMs - metricsA.giftDiffMs
+    }
+
+    if (sortBy === 'food_diff_desc') {
+      return metricsB.foodDiffMs - metricsA.foodDiffMs
+    }
+
+    if (sortBy === 'inside_time_desc') {
+      const getInsideMs = (s: ScanRecord) => {
+        if (!s.hasEntered || !s.entryTime) return 0
+        const end = s.hasExited && s.exitTime ? new Date(s.exitTime).getTime() : Date.now()
+        return Math.max(0, end - new Date(s.entryTime).getTime())
+      }
+      return getInsideMs(b) - getInsideMs(a)
+    }
+
+    // Default 'latest': by claimedAt or entryTime descending
+    const timeA = new Date(a.entryTime || a.claimedAt).getTime()
+    const timeB = new Date(b.entryTime || b.claimedAt).getTime()
+    return timeB - timeA
+  })
+
+  const pendingAnyCount = scans.filter((s) => s.hasEntered && (!s.giftClaimed || !s.foodClaimed)).length
+
   // Export to CSV
   function handleExportCSV() {
-    if (!scans.length) return
+    if (!sortedAndFilteredScans.length) return
 
     const headers = [
       'Participant ID',
@@ -169,37 +288,44 @@ export default function DailyScansPage() {
       'Exit Time (IST)',
       'Time Spent / Status',
       'Gift Status',
+      'Gift Delay / Diff',
       'Gift Claim Time',
       'Gift Staff',
       'Bhojan Packet Status',
+      'Bhojan Delay / Diff',
       'Bhojan Packet Claim Time',
       'Bhojan Packet Staff',
     ]
 
-    const rows = filteredScans.map((s) => [
-      `"${s.participant.participantId}"`,
-      `"${s.participant.name}"`,
-      `"${s.participant.fatherName}"`,
-      s.navratriDay,
-      s.distributionDate,
-      s.entryTime
-        ? new Date(s.entryTime).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })
-        : '-',
-      s.exitTime
-        ? new Date(s.exitTime).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })
-        : '-',
-      s.isInside ? `"अंदर हैं (${s.timeSpent || ''})"` : s.hasExited ? `"बाहर गए (कुल ${s.timeSpent || ''})"` : '"बाकी"',
-      s.giftClaimed ? 'CLAIMED' : 'PENDING',
-      s.giftClaimedAt
-        ? new Date(s.giftClaimedAt).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })
-        : '-',
-      `"${s.giftStaffName || '-'}"`,
-      s.foodClaimed ? 'CLAIMED' : 'PENDING',
-      s.foodClaimedAt
-        ? new Date(s.foodClaimedAt).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })
-        : '-',
-      `"${s.foodStaffName || '-'}"`,
-    ])
+    const rows = sortedAndFilteredScans.map((s) => {
+      const m = getScanDelayMetrics(s)
+      return [
+        `"${s.participant.participantId}"`,
+        `"${s.participant.name}"`,
+        `"${s.participant.fatherName}"`,
+        s.navratriDay,
+        s.distributionDate,
+        s.entryTime
+          ? new Date(s.entryTime).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })
+          : '-',
+        s.exitTime
+          ? new Date(s.exitTime).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })
+          : '-',
+        s.isInside ? `"अंदर हैं (${s.timeSpent || ''})"` : s.hasExited ? `"बाहर गए (कुल ${s.timeSpent || ''})"` : '"बाकी"',
+        s.giftClaimed ? 'CLAIMED' : 'PENDING',
+        `"${m.giftDiffLabel || '-'}"`,
+        s.giftClaimedAt
+          ? new Date(s.giftClaimedAt).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })
+          : '-',
+        `"${s.giftStaffName || '-'}"`,
+        s.foodClaimed ? 'CLAIMED' : 'PENDING',
+        `"${m.foodDiffLabel || '-'}"`,
+        s.foodClaimedAt
+          ? new Date(s.foodClaimedAt).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })
+          : '-',
+        `"${s.foodStaffName || '-'}"`,
+      ]
+    })
 
     const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n')
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
@@ -426,7 +552,7 @@ export default function DailyScansPage() {
             </div>
 
             {/* Filter and Search Bar */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+            <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2.5">
               <div className="relative">
                 <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
@@ -434,22 +560,43 @@ export default function DailyScansPage() {
                   placeholder="नाम या आईडी से खोजें..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full sm:w-56 pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-orange-500 focus:bg-white"
+                  className="w-full sm:w-52 pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-orange-500 focus:bg-white"
                 />
               </div>
 
+              {/* Status Filter */}
               <select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as 'all' | 'inside' | 'exited' | 'both' | 'gift_only' | 'food_only')}
-                className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                onChange={(e) => setStatusFilter(e.target.value as any)}
+                className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-1 focus:ring-orange-500 cursor-pointer"
               >
                 <option value="all">सभी स्कैन ({scans.length})</option>
+                <option value="pending_any">⚠️ प्रवेश हुआ, सामग्री बाकी ({pendingAnyCount})</option>
                 <option value="inside">🟢 अभी अंदर हैं ({summary.currentlyInside})</option>
                 <option value="exited">⚪ प्रस्थान कर चुके ({summary.exitedCount})</option>
+                <option value="pending_gift">🎁 केवल उपहार बाकी</option>
+                <option value="pending_food">🍱 केवल भोजन बाकी</option>
                 <option value="both">दोनों सामग्री वितरित</option>
                 <option value="gift_only">केवल उपहार वितरित</option>
                 <option value="food_only">केवल भोजन वितरित</option>
               </select>
+
+              {/* Sort By Filter */}
+              <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1">
+                <ArrowUpDown className="w-3.5 h-3.5 text-orange-600 shrink-0" />
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as any)}
+                  className="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer"
+                  title="क्रमबद्ध करें (Sort By)"
+                >
+                  <option value="latest">समय: नवीनतम स्कैन पहले</option>
+                  <option value="pending_wait_desc">⚠️ सामग्री लंबित: सबसे अधिक प्रतीक्षा (High → Low)</option>
+                  <option value="gift_diff_desc">🎁 प्रवेश ➔ उपहार अंतर (High → Low)</option>
+                  <option value="food_diff_desc">🍱 प्रवेश ➔ भोजन अंतर (High → Low)</option>
+                  <option value="inside_time_desc">⏳ परिसर में कुल समय (High → Low)</option>
+                </select>
+              </div>
             </div>
           </div>
 
@@ -475,111 +622,156 @@ export default function DailyScansPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-medium">
-                  {filteredScans.map((record) => (
-                    <tr key={record._id} className="hover:bg-slate-50/50 transition-colors">
-                      {/* Participant */}
-                      <td className="py-3.5 px-4">
-                        <div className="flex flex-col">
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-mono text-[11px] font-bold text-orange-700 bg-orange-50 px-1.5 py-0.5 rounded">
-                              {record.participant.participantId}
+                  {sortedAndFilteredScans.map((record) => {
+                    const metrics = getScanDelayMetrics(record)
+                    return (
+                      <tr key={record._id} className="hover:bg-slate-50/50 transition-colors">
+                        {/* Participant */}
+                        <td className="py-3.5 px-4">
+                          <div className="flex flex-col">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-mono text-[11px] font-bold text-orange-700 bg-orange-50 px-1.5 py-0.5 rounded">
+                                {record.participant.participantId}
+                              </span>
+                              <span className="font-bold text-slate-900">
+                                {record.participant.name}
+                              </span>
+                            </div>
+                            <span className="text-[11px] text-slate-400 pl-0.5">
+                              पिता / अभिभावक: {record.participant.fatherName}
                             </span>
-                            <span className="font-bold text-slate-900">
-                              {record.participant.name}
-                            </span>
+                            {/* If anything is pending with significant delay, show small warning banner */}
+                            {metrics.isPendingAny && (
+                              <div className="mt-1 flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50/80 px-1.5 py-0.5 rounded w-fit">
+                                <AlertTriangle className="w-3 h-3 text-amber-600 shrink-0" />
+                                <span>
+                                  {metrics.isPendingGift && metrics.isPendingFood
+                                    ? `उपहार व भोजन बाकी (${metrics.giftDiffLabel})`
+                                    : metrics.isPendingGift
+                                    ? `उपहार बाकी (${metrics.giftDiffLabel})`
+                                    : `भोजन बाकी (${metrics.foodDiffLabel})`}
+                                </span>
+                              </div>
+                            )}
                           </div>
-                          <span className="text-[11px] text-slate-400 pl-0.5">
-                            पिता / अभिभावक: {record.participant.fatherName}
-                          </span>
-                        </div>
-                      </td>
+                        </td>
 
-                      {/* Attendance & Duration Status */}
-                      <td className="py-3.5 px-3 whitespace-nowrap">
-                        {record.isInside ? (
-                          <div className="flex flex-col">
-                            <span className="inline-flex items-center gap-1.5 text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md text-[11px] font-bold w-fit">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                              <span>अंदर हैं (IN)</span>
+                        {/* Attendance & Duration Status */}
+                        <td className="py-3.5 px-3 whitespace-nowrap">
+                          {record.isInside ? (
+                            <div className="flex flex-col">
+                              <span className="inline-flex items-center gap-1.5 text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md text-[11px] font-bold w-fit">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                <span>अंदर हैं (IN)</span>
+                              </span>
+                              <span className="text-[11px] text-slate-600 mt-1 font-mono">
+                                प्रवेश: {record.entryTime ? new Date(record.entryTime).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' }) : '-'}
+                              </span>
+                              <span className="text-[10px] text-emerald-600 font-medium">
+                                {record.timeSpent ? `${record.timeSpent} से अंदर हैं` : ''}
+                              </span>
+                            </div>
+                          ) : record.hasExited ? (
+                            <div className="flex flex-col">
+                              <span className="inline-flex items-center gap-1 text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md text-[11px] font-semibold w-fit">
+                                <ExitIcon className="w-3 h-3 text-slate-500" />
+                                <span>बाहर जा चुके (OUT)</span>
+                              </span>
+                              <span className="text-[10px] text-slate-500 mt-0.5 font-mono">
+                                प्रवेश: {record.entryTime ? new Date(record.entryTime).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' }) : '-'}
+                                {' • '}
+                                प्रस्थान: {record.exitTime ? new Date(record.exitTime).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' }) : '-'}
+                              </span>
+                              <span className="text-[10px] text-blue-600 font-medium">
+                                कुल समय: {record.timeSpent}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md text-[11px]">
+                              प्रवेश बाकी
                             </span>
-                            <span className="text-[11px] text-slate-600 mt-1 font-mono">
-                              प्रवेश: {record.entryTime ? new Date(record.entryTime).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' }) : '-'}
-                            </span>
-                            <span className="text-[10px] text-emerald-600 font-medium">
-                              {record.timeSpent ? `${record.timeSpent} से अंदर हैं` : ''}
-                            </span>
-                          </div>
-                        ) : record.hasExited ? (
-                          <div className="flex flex-col">
-                            <span className="inline-flex items-center gap-1 text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md text-[11px] font-semibold w-fit">
-                              <ExitIcon className="w-3 h-3 text-slate-500" />
-                              <span>बाहर जा चुके (OUT)</span>
-                            </span>
-                            <span className="text-[10px] text-slate-500 mt-0.5 font-mono">
-                              प्रवेश: {record.entryTime ? new Date(record.entryTime).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' }) : '-'}
-                              {' • '}
-                              प्रस्थान: {record.exitTime ? new Date(record.exitTime).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' }) : '-'}
-                            </span>
-                            <span className="text-[10px] text-blue-600 font-medium">
-                              कुल समय: {record.timeSpent}
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md text-[11px]">
-                            प्रवेश बाकी
-                          </span>
-                        )}
-                      </td>
+                          )}
+                        </td>
 
-                      {/* Gift Status */}
-                      <td className="py-3.5 px-3 whitespace-nowrap">
-                        {record.giftClaimed ? (
-                          <div className="flex flex-col">
-                            <span className="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md text-[11px] font-semibold w-fit">
-                              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                              वितरित
+                        {/* Gift Status */}
+                        <td className="py-3.5 px-3 whitespace-nowrap">
+                          {record.giftClaimed ? (
+                            <div className="flex flex-col">
+                              <span className="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md text-[11px] font-semibold w-fit">
+                                <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                वितरित
+                              </span>
+                              <span className="text-[10px] text-slate-400 mt-0.5">
+                                {record.giftClaimedAt && new Date(record.giftClaimedAt).toLocaleTimeString('en-IN', {
+                                  timeZone: 'Asia/Kolkata',
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })}
+                                {record.giftStaffName ? ` • ${record.giftStaffName}` : ''}
+                              </span>
+                              {metrics.hasEntered && (
+                                <span className="text-[10px] text-slate-500 font-medium">
+                                  अंतर: {metrics.giftDiffLabel}
+                                </span>
+                              )}
+                            </div>
+                          ) : record.hasEntered ? (
+                            <div className="flex flex-col gap-0.5">
+                              <span className="inline-flex items-center gap-1 text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md text-[11px] font-bold w-fit animate-pulse">
+                                <AlertTriangle className="w-3 h-3 text-amber-600" />
+                                बाकी ({metrics.giftDiffLabel} से)
+                              </span>
+                              <span className="text-[10px] text-amber-700 font-semibold">
+                                विलंब: {metrics.giftDiffLabel}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md text-[11px]">
+                              <XCircle className="w-3 h-3 text-slate-300" />
+                              बाकी
                             </span>
-                            <span className="text-[10px] text-slate-400 mt-0.5">
-                              {record.giftClaimedAt && new Date(record.giftClaimedAt).toLocaleTimeString('en-IN', {
-                                timeZone: 'Asia/Kolkata',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })}
-                              {record.giftStaffName ? ` • ${record.giftStaffName}` : ''}
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md text-[11px]">
-                            <XCircle className="w-3 h-3 text-slate-300" />
-                            बाकी
-                          </span>
-                        )}
-                      </td>
+                          )}
+                        </td>
 
-                      {/* Food Packet Status */}
-                      <td className="py-3.5 px-3 whitespace-nowrap">
-                        {record.foodClaimed ? (
-                          <div className="flex flex-col">
-                            <span className="inline-flex items-center gap-1 text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-md text-[11px] font-semibold w-fit">
-                              <CheckCircle2 className="w-3 h-3 text-blue-600" />
-                              वितरित
+                        {/* Food Packet Status */}
+                        <td className="py-3.5 px-3 whitespace-nowrap">
+                          {record.foodClaimed ? (
+                            <div className="flex flex-col">
+                              <span className="inline-flex items-center gap-1 text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-md text-[11px] font-semibold w-fit">
+                                <CheckCircle2 className="w-3 h-3 text-blue-600" />
+                                वितरित
+                              </span>
+                              <span className="text-[10px] text-slate-400 mt-0.5">
+                                {record.foodClaimedAt && new Date(record.foodClaimedAt).toLocaleTimeString('en-IN', {
+                                  timeZone: 'Asia/Kolkata',
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })}
+                                {record.foodStaffName ? ` • ${record.foodStaffName}` : ''}
+                              </span>
+                              {metrics.hasEntered && (
+                                <span className="text-[10px] text-slate-500 font-medium">
+                                  अंतर: {metrics.foodDiffLabel}
+                                </span>
+                              )}
+                            </div>
+                          ) : record.hasEntered ? (
+                            <div className="flex flex-col gap-0.5">
+                              <span className="inline-flex items-center gap-1 text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md text-[11px] font-bold w-fit animate-pulse">
+                                <AlertTriangle className="w-3 h-3 text-amber-600" />
+                                बाकी ({metrics.foodDiffLabel} से)
+                              </span>
+                              <span className="text-[10px] text-amber-700 font-semibold">
+                                विलंब: {metrics.foodDiffLabel}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md text-[11px]">
+                              <XCircle className="w-3 h-3 text-slate-300" />
+                              बाकी
                             </span>
-                            <span className="text-[10px] text-slate-400 mt-0.5">
-                              {record.foodClaimedAt && new Date(record.foodClaimedAt).toLocaleTimeString('en-IN', {
-                                timeZone: 'Asia/Kolkata',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })}
-                              {record.foodStaffName ? ` • ${record.foodStaffName}` : ''}
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md text-[11px]">
-                            <XCircle className="w-3 h-3 text-slate-300" />
-                            बाकी
-                          </span>
-                        )}
-                      </td>
+                          )}
+                        </td>
 
                       {/* Action */}
                       <td className="py-3.5 px-4 text-right">
@@ -594,7 +786,8 @@ export default function DailyScansPage() {
                         )}
                       </td>
                     </tr>
-                  ))}
+                  )
+                })}
                 </tbody>
               </table>
             </div>
