@@ -147,14 +147,46 @@ export default function ScannerPage() {
         return
       }
 
-      await html5QrRef.current.start(
-        { facingMode: { ideal: 'environment' } },
-        { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 },
-        (token: string) => {
-          onQRScanned(token)
-        },
-        () => {} // Frame error ignore
-      )
+      const qrConfig = { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 }
+      const onScanSuccess = (token: string) => {
+        onQRScanned(token)
+      }
+      const onScanError = () => {} // Frame error ignore
+
+      try {
+        // Primary: Back camera (rear) for scanning passes
+        await html5QrRef.current.start(
+          { facingMode: 'environment' },
+          qrConfig,
+          onScanSuccess,
+          onScanError
+        )
+      } catch (envErr) {
+        console.warn('Environment camera start failed, trying device fallback:', envErr)
+        // Fallback: Check available cameras and pick rear camera or first available
+        const devices = await Html5Qrcode.getCameras().catch(() => [])
+        if (devices && devices.length > 0) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const backCam = devices.find((d: any) =>
+            /back|rear|environment/i.test(d.label || '')
+          )
+          const chosenId = backCam ? backCam.id : devices[0].id
+          await html5QrRef.current.start(
+            chosenId,
+            qrConfig,
+            onScanSuccess,
+            onScanError
+          )
+        } else {
+          // Final fallback: user facing mode
+          await html5QrRef.current.start(
+            { facingMode: 'user' },
+            qrConfig,
+            onScanSuccess,
+            onScanError
+          )
+        }
+      }
 
       isScanningRef.current = true
       isProcessingRef.current = false
