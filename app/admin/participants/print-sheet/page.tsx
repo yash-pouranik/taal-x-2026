@@ -27,9 +27,19 @@ export default function BulkPrintSheetPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
 
+  const [paperSize, setPaperSize] = useState<'a4' | '12x18'>('a4')
   const [cardsPerPage, setCardsPerPage] = useState<number>(12)
   const [fromCount, setFromCount] = useState<string>('')
   const [toCount, setToCount] = useState<string>('')
+
+  function handlePaperSizeChange(newSize: 'a4' | '12x18') {
+    setPaperSize(newSize)
+    if (newSize === '12x18') {
+      setCardsPerPage(24)
+    } else {
+      setCardsPerPage(12)
+    }
+  }
 
   function getParticipantNum(p: ParticipantWithQR): number {
     if (p.countNumber !== undefined && p.countNumber !== null) return Number(p.countNumber)
@@ -54,7 +64,7 @@ export default function BulkPrintSheetPage() {
               const qrDataUrl = await QRCode.toDataURL(p.qrToken, {
                 errorCorrectionLevel: 'M',
                 margin: 0,
-                width: 220,
+                width: 300,
                 color: { dark: '#000000', light: '#FFFFFF' },
               })
               return { ...p, qrDataUrl }
@@ -117,7 +127,7 @@ export default function BulkPrintSheetPage() {
             </Link>
             <div>
               <h1 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                <span>A4 बल्क कार्ड प्रिंट शीट</span>
+                <span>{paperSize === '12x18' ? '12×18 डिजिटल शीट प्रिंट' : 'A4 बल्क कार्ड प्रिंट शीट'}</span>
                 <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
                   {filtered.length} पास
                 </span>
@@ -126,39 +136,101 @@ export default function BulkPrintSheetPage() {
           </div>
 
           <div className="flex items-center gap-3 flex-wrap">
+            {/* Paper Size Selector */}
+            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs font-medium">
+              <span className="text-slate-500 px-2">कागज़:</span>
+              <button
+                onClick={() => handlePaperSizeChange('a4')}
+                className={`px-3 py-1.5 rounded-lg transition-all ${
+                  paperSize === 'a4'
+                    ? 'bg-white text-orange-600 font-bold shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                A4
+              </button>
+              <button
+                onClick={() => handlePaperSizeChange('12x18')}
+                className={`px-3 py-1.5 rounded-lg transition-all ${
+                  paperSize === '12x18'
+                    ? 'bg-white text-orange-600 font-bold shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                12×18 इंच
+              </button>
+            </div>
+
             {/* Density Selector */}
             <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs font-medium">
-              <span className="text-slate-500 px-2">साइज़:</span>
-              <button
-                onClick={() => setCardsPerPage(12)}
-                className={`px-3 py-1.5 rounded-lg transition-all ${
-                  cardsPerPage === 12
-                    ? 'bg-white text-orange-600 font-bold shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                बड़ा QR (12 प्रति शीट - 3×4)
-              </button>
-              <button
-                onClick={() => setCardsPerPage(16)}
-                className={`px-3 py-1.5 rounded-lg transition-all ${
-                  cardsPerPage === 16
-                    ? 'bg-white text-orange-600 font-bold shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                मध्यम (16 प्रति शीट - 4×4)
-              </button>
-              <button
-                onClick={() => setCardsPerPage(20)}
-                className={`px-3 py-1.5 rounded-lg transition-all ${
-                  cardsPerPage === 20
-                    ? 'bg-white text-orange-600 font-bold shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                छोटा (20 प्रति शीट - 4×5)
-              </button>
+              <span className="text-slate-500 px-2">प्रति शीट:</span>
+              {paperSize === 'a4' ? (
+                <>
+                  <button
+                    onClick={() => setCardsPerPage(12)}
+                    className={`px-3 py-1.5 rounded-lg transition-all ${
+                      cardsPerPage === 12
+                        ? 'bg-white text-orange-600 font-bold shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    बड़ा (12 पास)
+                  </button>
+                  <button
+                    onClick={() => setCardsPerPage(16)}
+                    className={`px-3 py-1.5 rounded-lg transition-all ${
+                      cardsPerPage === 16
+                        ? 'bg-white text-orange-600 font-bold shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    मध्यम (16 पास)
+                  </button>
+                  <button
+                    onClick={() => setCardsPerPage(20)}
+                    className={`px-3 py-1.5 rounded-lg transition-all ${
+                      cardsPerPage === 20
+                        ? 'bg-white text-orange-600 font-bold shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    छोटा (20 पास)
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => setCardsPerPage(24)}
+                    className={`px-3 py-1.5 rounded-lg transition-all ${
+                      cardsPerPage === 24
+                        ? 'bg-white text-orange-600 font-bold shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    बड़ा QR (24 पास - 4×6)
+                  </button>
+                  <button
+                    onClick={() => setCardsPerPage(30)}
+                    className={`px-3 py-1.5 rounded-lg transition-all ${
+                      cardsPerPage === 30
+                        ? 'bg-white text-orange-600 font-bold shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    मध्यम (30 पास - 5×6)
+                  </button>
+                  <button
+                    onClick={() => setCardsPerPage(40)}
+                    className={`px-3 py-1.5 rounded-lg transition-all ${
+                      cardsPerPage === 40
+                        ? 'bg-white text-orange-600 font-bold shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    छोटा (40 पास - 5×8)
+                  </button>
+                </>
+              )}
             </div>
 
             {/* Count Range Selector */}
@@ -224,11 +296,17 @@ export default function BulkPrintSheetPage() {
           <span className="flex items-center gap-1.5 text-slate-600 font-medium">
             <FileCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
             <span>
-              {cardsPerPage === 12
-                ? 'बड़ा QR: 12 टोकन प्रति A4 शीट (3 × 4 ग्रिड)।'
-                : cardsPerPage === 16
-                ? 'मध्यम QR: 16 टोकन प्रति A4 शीट (4 × 4 ग्रिड)।'
-                : 'छोटा QR: 20 टोकन प्रति A4 शीट (4 × 5 ग्रिड)।'}
+              {paperSize === 'a4'
+                ? cardsPerPage === 12
+                  ? 'A4 शीट: 12 टोकन प्रति शीट (3 × 4 ग्रिड, QR ~50mm)।'
+                  : cardsPerPage === 16
+                  ? 'A4 शीट: 16 टोकन प्रति शीट (4 × 4 ग्रिड, QR ~42mm)।'
+                  : 'A4 शीट: 20 टोकन प्रति शीट (4 × 5 ग्रिड, QR ~35mm)।'
+                : cardsPerPage === 24
+                ? '12×18 डिजिटल शीट: 24 टोकन प्रति शीट (4 × 6 ग्रिड, बड़ा QR ~56mm)।'
+                : cardsPerPage === 30
+                ? '12×18 डिजिटल शीट: 30 टोकन प्रति शीट (5 × 6 ग्रिड, मध्यम QR ~48mm)।'
+                : '12×18 डिजिटल शीट: 40 टोकन प्रति शीट (5 × 8 ग्रिड, छोटा QR ~38mm)।'}
             </span>
             {(fromCount !== '' || toCount !== '') && (
               <span className="font-mono font-bold bg-orange-100 text-orange-800 px-2 py-0.5 rounded border border-orange-200">
@@ -237,17 +315,23 @@ export default function BulkPrintSheetPage() {
             )}
           </span>
           <span className="text-slate-400">
-            प्रिंटर सेटिंग में मार्जिन &quot;None&quot; या &quot;Minimum&quot; सेट करें।
+            {paperSize === '12x18'
+              ? 'प्रिंटर में Paper Size "12 x 18" या "Super A3" और Margin "Minimum/None" चुनें।'
+              : 'प्रिंटर सेटिंग में मार्जिन "None" या "Minimum" सेट करें।'}
           </span>
         </div>
       </header>
 
       {/* Printable Sheet View */}
-      <main className="max-w-4xl mx-auto py-8 print:py-0 print:max-w-none">
+      <main
+        className={`${
+          paperSize === '12x18' ? 'max-w-5xl' : 'max-w-4xl'
+        } mx-auto py-8 print:py-0 print:max-w-none`}
+      >
         {loading ? (
           <div className="flex flex-col items-center justify-center py-24 text-slate-400 gap-3">
             <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
-            <span className="text-sm font-medium">A4 शीट और QR कोड तैयार हो रहे हैं...</span>
+            <span className="text-sm font-medium">शीट और QR कोड तैयार हो रहे हैं...</span>
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-24 text-slate-400 text-sm">
@@ -257,16 +341,22 @@ export default function BulkPrintSheetPage() {
           pages.map((pageGroup, pageIndex) => (
             <div
               key={pageIndex}
-              className="a4-sheet bg-white shadow-xl print:shadow-none mb-8 print:mb-0 p-3 sm:p-4 print:p-1.5 rounded-2xl print:rounded-none border border-slate-200/80 print:border-none break-after-page"
+              className="sheet-container bg-white shadow-xl print:shadow-none mb-8 print:mb-0 p-3 sm:p-4 print:p-1.5 rounded-2xl print:rounded-none border border-slate-200/80 print:border-none break-after-page"
               style={{
                 pageBreakAfter: 'always',
-                minHeight: '272mm',
+                minHeight: paperSize === '12x18' ? '435mm' : '272mm',
               }}
             >
-              {/* Grid: 3 cols for 12, 4 cols for 16 or 20 */}
+              {/* Grid Layout */}
               <div
                 className={`grid h-full ${
-                  cardsPerPage === 12
+                  paperSize === '12x18'
+                    ? cardsPerPage === 24
+                      ? 'grid-cols-4 gap-2.5 print:gap-1.5'
+                      : cardsPerPage === 30
+                      ? 'grid-cols-5 gap-2 print:gap-1'
+                      : 'grid-cols-5 gap-1.5 print:gap-0.5'
+                    : cardsPerPage === 12
                     ? 'grid-cols-3 gap-2.5 print:gap-1.5'
                     : cardsPerPage === 16
                     ? 'grid-cols-4 gap-2 print:gap-1'
@@ -278,8 +368,22 @@ export default function BulkPrintSheetPage() {
                     key={p._id}
                     className="border border-dashed border-slate-400 p-1 sm:p-1.5 print:p-1 rounded-lg flex flex-col items-center justify-between text-center bg-white overflow-hidden"
                     style={{
-                      minHeight: cardsPerPage === 20 ? '51mm' : '65mm',
-                      maxHeight: cardsPerPage === 20 ? '53mm' : '67mm',
+                      minHeight:
+                        paperSize === '12x18'
+                          ? cardsPerPage === 40
+                            ? '50mm'
+                            : '68mm'
+                          : cardsPerPage === 20
+                          ? '51mm'
+                          : '65mm',
+                      maxHeight:
+                        paperSize === '12x18'
+                          ? cardsPerPage === 40
+                            ? '53mm'
+                            : '72mm'
+                          : cardsPerPage === 20
+                          ? '53mm'
+                          : '67mm',
                     }}
                   >
                     {/* 1. QR Code */}
@@ -289,7 +393,13 @@ export default function BulkPrintSheetPage() {
                         src={p.qrDataUrl}
                         alt={`QR for ${p.name}`}
                         className={`object-contain shrink-0 mx-auto ${
-                          cardsPerPage === 12
+                          paperSize === '12x18'
+                            ? cardsPerPage === 24
+                              ? 'w-full max-w-[56mm] max-h-[56mm]'
+                              : cardsPerPage === 30
+                              ? 'w-full max-w-[48mm] max-h-[48mm]'
+                              : 'w-full max-w-[38mm] max-h-[38mm]'
+                            : cardsPerPage === 12
                             ? 'w-full max-w-[50mm] max-h-[50mm]'
                             : cardsPerPage === 16
                             ? 'w-full max-w-[42mm] max-h-[42mm]'
@@ -305,7 +415,13 @@ export default function BulkPrintSheetPage() {
                       {/* 2. Number underneath */}
                       <div
                         className={`font-black font-mono text-slate-900 leading-none ${
-                          cardsPerPage === 12 ? 'text-sm' : 'text-xs'
+                          paperSize === '12x18'
+                            ? cardsPerPage === 24
+                              ? 'text-sm sm:text-base'
+                              : 'text-xs'
+                            : cardsPerPage === 12
+                            ? 'text-sm'
+                            : 'text-xs'
                         }`}
                       >
                         #{p.countNumber ?? p.participantId}
@@ -314,7 +430,13 @@ export default function BulkPrintSheetPage() {
                       {/* 3. Name underneath */}
                       <div
                         className={`font-bold text-slate-800 mt-0.5 leading-tight truncate px-0.5 ${
-                          cardsPerPage === 12 ? 'text-xs' : 'text-[11px]'
+                          paperSize === '12x18'
+                            ? cardsPerPage === 24
+                              ? 'text-xs sm:text-sm'
+                              : 'text-[11px]'
+                            : cardsPerPage === 12
+                            ? 'text-xs'
+                            : 'text-[11px]'
                         }`}
                         title={p.name}
                       >
@@ -331,8 +453,22 @@ export default function BulkPrintSheetPage() {
                       key={`empty-${emptyIdx}`}
                       className="border border-dashed border-slate-200 rounded-lg"
                       style={{
-                        minHeight: cardsPerPage === 20 ? '51mm' : '65mm',
-                        maxHeight: cardsPerPage === 20 ? '53mm' : '67mm',
+                        minHeight:
+                          paperSize === '12x18'
+                            ? cardsPerPage === 40
+                              ? '50mm'
+                              : '68mm'
+                            : cardsPerPage === 20
+                            ? '51mm'
+                            : '65mm',
+                        maxHeight:
+                          paperSize === '12x18'
+                            ? cardsPerPage === 40
+                              ? '53mm'
+                              : '72mm'
+                            : cardsPerPage === 20
+                            ? '53mm'
+                            : '67mm',
                       }}
                     />
                   )
@@ -346,8 +482,8 @@ export default function BulkPrintSheetPage() {
       <style jsx global>{`
         @media print {
           @page {
-            size: A4 portrait;
-            margin: 6mm;
+            size: ${paperSize === '12x18' ? '12in 18in' : 'A4 portrait'};
+            margin: ${paperSize === '12x18' ? '8mm' : '6mm'};
           }
           body {
             background: white !important;
