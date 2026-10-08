@@ -354,6 +354,14 @@ export default function ParticipantsPage() {
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
+                            <Link
+                              href={`/admin/participants/print-sheet?ids=${p.countNumber ?? p.participantId}`}
+                              className="inline-flex items-center gap-1 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-lg transition-colors shadow-2xs"
+                              title="इस प्रतिभागी का QR शीट में प्रिंट करें"
+                            >
+                              <Printer className="w-3.5 h-3.5 text-slate-500" />
+                              <span>शीट</span>
+                            </Link>
                             <button
                               onClick={() => setEditingParticipant(p)}
                               className="inline-flex items-center gap-1 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-lg transition-colors shadow-2xs"

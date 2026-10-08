@@ -8,6 +8,14 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: [
+          'var(--font-inter)',
+          'var(--font-noto-devanagari)',
+          'system-ui',
+          'sans-serif',
+        ],
+      },
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
@@ -17,3 +25,4 @@ const config: Config = {
   plugins: [],
 };
 export default config;
+

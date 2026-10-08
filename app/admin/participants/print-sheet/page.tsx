@@ -11,6 +11,11 @@ import {
   Flame,
   Loader2,
   FileCheck,
+  Plus,
+  UserCheck,
+  X,
+  Trash2,
+  Check,
 } from 'lucide-react'
 
 interface ParticipantWithQR {
@@ -31,6 +36,13 @@ export default function BulkPrintSheetPage() {
   const [cardsPerPage, setCardsPerPage] = useState<number>(12)
   const [fromCount, setFromCount] = useState<string>('')
   const [toCount, setToCount] = useState<string>('')
+
+  // Individual IDs selection state
+  const [selectedIndividualIds, setSelectedIndividualIds] = useState<string[]>([])
+  const [individualInput, setIndividualInput] = useState<string>('')
+  const [showIndividualModal, setShowIndividualModal] = useState<boolean>(false)
+  const [modalSearch, setModalSearch] = useState<string>('')
+  const [excludedCardIds, setExcludedCardIds] = useState<string[]>([])
 
   function handlePaperSizeChange(newSize: 'a4' | '12x18') {
     setPaperSize(newSize)
@@ -82,6 +94,79 @@ export default function BulkPrintSheetPage() {
     return match ? parseInt(match[0], 10) : 0
   }
 
+  function isParticipantMatchingId(p: ParticipantWithQR, targetId: string): boolean {
+    const clean = targetId.trim().toUpperCase().replace(/^#/, '')
+    if (!clean) return false
+    if (p.participantId.toUpperCase() === clean) return true
+    if (p.countNumber !== undefined && p.countNumber !== null && String(p.countNumber) === clean) return true
+    const targetNum = parseInt(clean, 10)
+    if (!isNaN(targetNum)) {
+      if (getParticipantNum(p) === targetNum) return true
+      if (p.countNumber === targetNum) return true
+    }
+    return false
+  }
+
+  function isParticipantInIndividualList(p: ParticipantWithQR, list: string[]): boolean {
+    if (list.length === 0) return false
+    return list.some((target) => isParticipantMatchingId(p, target))
+  }
+
+  function parseAndAddIds(inputStr: string) {
+    if (!inputStr.trim()) return
+    const tokens = inputStr
+      .split(/[\s,;]+/)
+      .map((t) => t.trim().replace(/^#/, ''))
+      .filter(Boolean)
+
+    if (tokens.length === 0) return
+
+    setSelectedIndividualIds((prev) => {
+      const set = new Set(prev.map((x) => x.toUpperCase()))
+      tokens.forEach((t) => set.add(t.toUpperCase()))
+      return Array.from(set)
+    })
+    setIndividualInput('')
+  }
+
+  function removeIndividualId(idToRemove: string) {
+    setSelectedIndividualIds((prev) =>
+      prev.filter((id) => id.toUpperCase() !== idToRemove.toUpperCase())
+    )
+  }
+
+  function toggleParticipantSelection(p: ParticipantWithQR) {
+    const pKey = String(p.countNumber ?? p.participantId)
+    if (isParticipantInIndividualList(p, selectedIndividualIds)) {
+      setSelectedIndividualIds((prev) =>
+        prev.filter((id) => !isParticipantMatchingId(p, id))
+      )
+    } else {
+      setSelectedIndividualIds((prev) => [...prev, pKey])
+    }
+  }
+
+  // Load URL query params if present (e.g. ?ids=12,15,45 or ?from=1&to=50)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      const urlIds = params.get('ids')
+      const urlFrom = params.get('from')
+      const urlTo = params.get('to')
+      if (urlIds) {
+        const parsed = urlIds
+          .split(/[\s,;]+/)
+          .map((t) => t.trim().replace(/^#/, ''))
+          .filter(Boolean)
+        if (parsed.length > 0) {
+          setSelectedIndividualIds(parsed.map((t) => t.toUpperCase()))
+        }
+      }
+      if (urlFrom) setFromCount(urlFrom)
+      if (urlTo) setToCount(urlTo)
+    }
+  }, [])
+
   useEffect(() => {
     async function loadData() {
       try {
@@ -119,16 +204,45 @@ export default function BulkPrintSheetPage() {
     loadData()
   }, [])
 
+  const pickerList = participants.filter((p) => {
+    if (!modalSearch.trim()) return true
+    const term = modalSearch.toLowerCase()
+    return (
+      p.name.toLowerCase().includes(term) ||
+      p.participantId.toLowerCase().includes(term) ||
+      (p.countNumber !== undefined && String(p.countNumber).includes(term))
+    )
+  })
+
   const filtered = participants
     .filter((p) => {
-      const num = getParticipantNum(p)
+      // Excluded card check (if user dismissed it on preview)
+      if (excludedCardIds.includes(p._id)) return false
 
-      if (fromCount !== '' && !isNaN(Number(fromCount))) {
-        if (num < Number(fromCount)) return false
-      }
+      const isIndividuallySelected = isParticipantInIndividualList(
+        p,
+        selectedIndividualIds
+      )
+      const hasRange =
+        (fromCount !== '' && !isNaN(Number(fromCount))) ||
+        (toCount !== '' && !isNaN(Number(toCount)))
 
-      if (toCount !== '' && !isNaN(Number(toCount))) {
-        if (num > Number(toCount)) return false
+      if (selectedIndividualIds.length > 0 && !hasRange) {
+        // Only individual IDs specified -> show ONLY those
+        if (!isIndividuallySelected) return false
+      } else if (selectedIndividualIds.length > 0 && hasRange) {
+        // Both range AND individual IDs specified -> include if in range OR individual
+        const num = getParticipantNum(p)
+        let inRange = true
+        if (fromCount !== '' && !isNaN(Number(fromCount)) && num < Number(fromCount)) inRange = false
+        if (toCount !== '' && !isNaN(Number(toCount)) && num > Number(toCount)) inRange = false
+
+        if (!inRange && !isIndividuallySelected) return false
+      } else if (hasRange) {
+        // Only range specified
+        const num = getParticipantNum(p)
+        if (fromCount !== '' && !isNaN(Number(fromCount)) && num < Number(fromCount)) return false
+        if (toCount !== '' && !isNaN(Number(toCount)) && num > Number(toCount)) return false
       }
 
       if (!search.trim()) return true
@@ -312,6 +426,27 @@ export default function BulkPrintSheetPage() {
               )}
             </div>
 
+            {/* Individual IDs Button */}
+            <button
+              onClick={() => setShowIndividualModal(true)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+                selectedIndividualIds.length > 0
+                  ? 'bg-orange-50 border-orange-300 text-orange-700 shadow-xs'
+                  : 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700'
+              }`}
+              title="विशिष्ट प्रतिभागी IDs जोड़ें या चुनें"
+            >
+              <UserCheck className="w-3.5 h-3.5 text-orange-600" />
+              <span>विशिष्ट IDs</span>
+              {selectedIndividualIds.length > 0 ? (
+                <span className="bg-orange-600 text-white text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold">
+                  {selectedIndividualIds.length}
+                </span>
+              ) : (
+                <Plus className="w-3 h-3 text-slate-400" />
+              )}
+            </button>
+
             <div className="relative">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
@@ -337,6 +472,50 @@ export default function BulkPrintSheetPage() {
           </div>
         </div>
 
+        {/* Selected Individual IDs Chip Bar */}
+        {selectedIndividualIds.length > 0 && (
+          <div className="max-w-6xl mx-auto mt-2 pt-2 border-t border-slate-100 flex items-center justify-between gap-2 flex-wrap text-xs print:hidden">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="font-semibold text-slate-600 flex items-center gap-1 text-[11px]">
+                <UserCheck className="w-3.5 h-3.5 text-orange-600" />
+                <span>चयनित IDs ({selectedIndividualIds.length}):</span>
+              </span>
+              <div className="flex items-center gap-1 flex-wrap">
+                {selectedIndividualIds.map((id) => (
+                  <span
+                    key={id}
+                    className="inline-flex items-center gap-1 bg-orange-100 text-orange-950 border border-orange-200 px-2 py-0.5 rounded-md font-mono text-[11px] font-bold"
+                  >
+                    <span>#{id}</span>
+                    <button
+                      onClick={() => removeIndividualId(id)}
+                      className="text-slate-400 hover:text-red-700 font-bold ml-0.5"
+                      title="हटाएं"
+                    >
+                      ✕
+                    </button>
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowIndividualModal(true)}
+                className="text-orange-600 hover:text-orange-700 font-semibold text-[11px] hover:underline"
+              >
+                + और जोड़ें
+              </button>
+              <span className="text-slate-300">|</span>
+              <button
+                onClick={() => setSelectedIndividualIds([])}
+                className="text-red-500 hover:text-red-700 font-semibold text-[11px] hover:underline"
+              >
+                सभी हटाएं
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="max-w-6xl mx-auto mt-3 text-xs text-slate-500 flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-t border-slate-100 pt-2">
           <span className="flex items-center gap-1.5 text-slate-600 font-medium">
             <FileCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
@@ -351,7 +530,12 @@ export default function BulkPrintSheetPage() {
             </span>
             {(fromCount !== '' || toCount !== '') && (
               <span className="font-mono font-bold bg-orange-100 text-orange-800 px-2 py-0.5 rounded border border-orange-200">
-                क्रमांक #{fromCount || '1'} से #{toCount || 'अंतिम'} ({filtered.length} टोकन)
+                रेंज #{fromCount || '1'} से #{toCount || 'अंतिम'}
+              </span>
+            )}
+            {selectedIndividualIds.length > 0 && (
+              <span className="font-mono font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded border border-emerald-200">
+                +{selectedIndividualIds.length} विशिष्ट IDs
               </span>
             )}
           </span>
@@ -362,6 +546,188 @@ export default function BulkPrintSheetPage() {
           </span>
         </div>
       </header>
+
+      {/* Individual IDs Selection Modal */}
+      {showIndividualModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in print:hidden">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] flex flex-col border border-slate-200 overflow-hidden">
+            {/* Modal Header */}
+            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center font-bold">
+                  <UserCheck className="w-4 h-4" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold text-slate-900">
+                    विशिष्ट / व्यक्तिगत IDs जोड़ें
+                  </h2>
+                  <p className="text-xs text-slate-500">
+                    जिन प्रतिभागियों के QR आपको प्रिंट शीट में शामिल करने हैं
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowIndividualModal(false)}
+                className="w-7 h-7 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-5 overflow-y-auto space-y-4">
+              {/* Batch Text Input */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  कॉमा (,) या स्पेस देकर IDs / क्रमांक लिखें:
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={individualInput}
+                    onChange={(e) => setIndividualInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        parseAndAddIds(individualInput)
+                      }
+                    }}
+                    placeholder="उदा: 5, 12, 45, 88, NAV-392..."
+                    className="flex-1 px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                  />
+                  <button
+                    onClick={() => parseAndAddIds(individualInput)}
+                    className="bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white px-3.5 py-2 rounded-xl text-xs font-semibold transition-all shrink-0 flex items-center gap-1"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>जोड़ें</span>
+                  </button>
+                </div>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  टिप: आप सीधे क्रमांक नंबर (12) या पूरा आईडी (NAV-012) लिख सकते हैं।
+                </p>
+              </div>
+
+              {/* Selected Badges */}
+              {selectedIndividualIds.length > 0 && (
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/80">
+                  <div className="flex items-center justify-between text-xs mb-2">
+                    <span className="font-semibold text-slate-700">
+                      वर्तमान में चयनित ({selectedIndividualIds.length}):
+                    </span>
+                    <button
+                      onClick={() => setSelectedIndividualIds([])}
+                      className="text-red-500 hover:text-red-700 font-semibold text-[11px] flex items-center gap-1"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      <span>सभी हटाएं</span>
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-wrap max-h-24 overflow-y-auto p-1">
+                    {selectedIndividualIds.map((id) => (
+                      <span
+                        key={id}
+                        className="inline-flex items-center gap-1 bg-white text-orange-950 border border-orange-200 px-2 py-0.5 rounded-lg font-mono text-[11px] font-bold shadow-2xs"
+                      >
+                        <span>#{id}</span>
+                        <button
+                          onClick={() => removeIndividualId(id)}
+                          className="text-slate-400 hover:text-red-600 font-bold ml-0.5"
+                        >
+                          ✕
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Search and Picker from full list */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  प्रतिभागी सूची से खोजें और चुनें:
+                </label>
+                <div className="relative mb-2">
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={modalSearch}
+                    onChange={(e) => setModalSearch(e.target.value)}
+                    placeholder="नाम, पिता का नाम या आईडी से खोजें..."
+                    className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-orange-500"
+                  />
+                </div>
+
+                <div className="border border-slate-200 rounded-xl max-h-48 overflow-y-auto divide-y divide-slate-100 text-xs bg-white">
+                  {pickerList.length === 0 ? (
+                    <div className="p-4 text-center text-slate-400 text-xs">
+                      कोई प्रतिभागी नहीं मिला।
+                    </div>
+                  ) : (
+                    pickerList.map((p) => {
+                      const isSelected = isParticipantInIndividualList(
+                        p,
+                        selectedIndividualIds
+                      )
+                      return (
+                        <div
+                          key={p._id}
+                          onClick={() => toggleParticipantSelection(p)}
+                          className={`px-3 py-2 flex items-center justify-between gap-2 cursor-pointer transition-colors ${
+                            isSelected
+                              ? 'bg-orange-50/70 hover:bg-orange-100/50'
+                              : 'hover:bg-slate-50'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 truncate">
+                            <span className="font-mono font-bold text-slate-900 shrink-0 bg-slate-100 px-1.5 py-0.5 rounded text-[11px]">
+                              #{p.countNumber ?? p.participantId}
+                            </span>
+                            <span className="font-semibold text-slate-800 truncate">
+                              {p.name}
+                            </span>
+                            <span className="text-slate-400 text-[11px] truncate">
+                              ({p.participantId})
+                            </span>
+                          </div>
+
+                          <div className="shrink-0">
+                            {isSelected ? (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+                                <Check className="w-3 h-3" />
+                                <span>चयनित</span>
+                              </span>
+                            ) : (
+                              <span className="text-[11px] font-semibold text-slate-500 hover:text-orange-600">
+                                + जोड़ें
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-5 py-3 border-t border-slate-100 bg-slate-50 flex items-center justify-between">
+              <span className="text-xs text-slate-500 font-medium">
+                {selectedIndividualIds.length > 0
+                  ? `${selectedIndividualIds.length} विशिष्ट IDs चयनित`
+                  : 'कोई विशिष्ट ID चयनित नहीं'}
+              </span>
+              <button
+                onClick={() => setShowIndividualModal(false)}
+                className="bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow-xs"
+              >
+                प्रिंट शीट देखें
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Printable Sheet View */}
       <main
@@ -393,9 +759,31 @@ export default function BulkPrintSheetPage() {
                 {pageGroup.map((p) => (
                   <div
                     key={p._id}
-                    className="border border-dashed border-slate-400 p-1 print:p-0.5 rounded-lg flex flex-col items-center justify-between text-center bg-white overflow-hidden"
+                    className="group relative border border-dashed border-slate-400 p-1 print:p-0.5 rounded-lg flex flex-col items-center justify-between text-center bg-white overflow-hidden"
                     style={getCardHeightStyle()}
                   >
+                    {/* Quick Dismiss Button (Hover on screen, hidden on print) */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (
+                          selectedIndividualIds.some((id) =>
+                            isParticipantMatchingId(p, id)
+                          )
+                        ) {
+                          setSelectedIndividualIds((prev) =>
+                            prev.filter((id) => !isParticipantMatchingId(p, id))
+                          )
+                        } else {
+                          setExcludedCardIds((prev) => [...prev, p._id])
+                        }
+                      }}
+                      className="absolute top-1 right-1 w-5 h-5 rounded-md bg-white/95 hover:bg-red-50 text-slate-400 hover:text-red-600 border border-slate-200 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity print:hidden text-[11px] font-bold z-10 shadow-2xs"
+                      title="शीट से इस पास को हटाएं"
+                    >
+                      ✕
+                    </button>
+
                     {/* 1. QR Code - Locked to exact millimeters */}
                     {p.qrDataUrl ? (
                       /* eslint-disable-next-line @next/next/no-img-element */
