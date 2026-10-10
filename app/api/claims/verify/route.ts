@@ -76,20 +76,17 @@ export async function POST(req: NextRequest) {
     distributionDate: todayDate,
   })
     .populate('claimedByStaffId', 'name')
-    .populate('giftStaffId', 'name')
     .populate('foodStaffId', 'name')
 
   const hasEntered = !!(existingClaim?.entryTime)
-  const hasExited = !!(existingClaim?.exitTime)
-  const isGiftClaimed = existingClaim ? !!existingClaim.giftClaimed : false
   const isFoodClaimed = existingClaim ? !!existingClaim.foodClaimed : false
 
-  // If already entered, exited, and both gift and food are claimed, everything is done!
-  if (existingClaim && hasEntered && hasExited && isGiftClaimed && isFoodClaimed) {
+  // If already entered and food is claimed, both stages are completed!
+  if (existingClaim && hasEntered && isFoodClaimed) {
     return NextResponse.json({
       valid: false,
       error: 'ALL_COMPLETED',
-      message: 'इस प्रतिभागी की आज की सभी प्रक्रियाएं (प्रवेश, उपहार, भोजन, प्रस्थान) पूर्ण हो चुकी हैं।',
+      message: 'इस प्रतिभागी की आज की दोनों प्रक्रियाएं (प्रवेश एवं भोजन) पूर्ण हो चुकी हैं ✅',
       participant: {
         name: participant.name,
         fatherName: participant.fatherName,
@@ -98,10 +95,6 @@ export async function POST(req: NextRequest) {
       claim: {
         navratriDay: existingClaim.navratriDay,
         entryTime: existingClaim.entryTime,
-        exitTime: existingClaim.exitTime,
-        giftClaimed: true,
-        giftClaimedAt: existingClaim.giftClaimedAt || existingClaim.claimedAt,
-        giftStaffName: (existingClaim.giftStaffId as { name?: string })?.name || (existingClaim.claimedByStaffId as { name?: string })?.name,
         foodClaimed: true,
         foodClaimedAt: existingClaim.foodClaimedAt,
         foodStaffName: (existingClaim.foodStaffId as { name?: string })?.name,
@@ -110,11 +103,10 @@ export async function POST(req: NextRequest) {
   }
 
   // Step 4: Return verification info
-  // If participant hasn't entered yet: ONLY allow entry!
+  // Stage 1: Entry
   const canMarkEntry = !hasEntered
-  const canClaimGift = hasEntered && !isGiftClaimed
+  // Stage 2: Food (allowed only after entry!)
   const canClaimFood = hasEntered && !isFoodClaimed
-  const canMarkExit = hasEntered && !hasExited
 
   return NextResponse.json({
     valid: true,
@@ -132,22 +124,15 @@ export async function POST(req: NextRequest) {
     navratriDay: day,
     distributionDate: todayDate,
     hasEntered,
-    hasExited,
     canMarkEntry,
-    canClaimGift,
     canClaimFood,
-    canMarkExit,
     entryTime: existingClaim?.entryTime,
-    exitTime: existingClaim?.exitTime,
     claim: existingClaim ? {
       entryTime: existingClaim.entryTime,
-      exitTime: existingClaim.exitTime,
-      giftClaimed: isGiftClaimed,
-      giftClaimedAt: existingClaim.giftClaimedAt || existingClaim.claimedAt,
-      giftStaffName: (existingClaim.giftStaffId as { name?: string })?.name || (existingClaim.claimedByStaffId as { name?: string })?.name,
       foodClaimed: isFoodClaimed,
       foodClaimedAt: existingClaim.foodClaimedAt,
       foodStaffName: (existingClaim.foodStaffId as { name?: string })?.name,
     } : null,
   })
 }
+
