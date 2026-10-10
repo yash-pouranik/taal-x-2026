@@ -101,7 +101,7 @@ export default function AdminDashboard() {
                 {
                   label: 'आज वितरित',
                   value: stats.todayCollected.toLocaleString('hi-IN'),
-                  sub: 'दिए गए उपहार/प्रॉप्स',
+                  sub: 'दिए गए भोजन पैकेट',
                   icon: CheckCircle2,
                   color: 'text-emerald-600',
                   bg: 'bg-emerald-50/80 border-emerald-100',

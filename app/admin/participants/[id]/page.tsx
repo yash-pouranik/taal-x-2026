@@ -18,7 +18,6 @@ import {
   UserX,
   Trash2,
   ShieldCheck,
-  Gift,
   UtensilsCrossed,
   LogIn,
   LogOut as ExitIcon,
@@ -38,11 +37,6 @@ interface DayGrid {
   hasExited?: boolean
   isCurrentlyInside?: boolean
   durationSpent?: string
-  gift?: {
-    claimed: boolean
-    claimedAt?: string
-    staffName?: string
-  }
   food?: {
     claimed: boolean
     claimedAt?: string
@@ -436,7 +430,7 @@ export default function ParticipantDetailPage() {
                     {dayGrid.length > 0 ? `${dayGrid.length} दिवसीय` : ''} वितरण एवं उपस्थिति सारणी
                   </h2>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    उपहार/प्रॉप, भोजन पैकेट और प्रवेश/प्रस्थान समय का अलग-अलग विवरण।
+                    प्रवेश समय और भोजन पैकेट वितरण का दैनिक विवरण।
                   </p>
                 </div>
                 <div className="flex items-center gap-3 text-xs font-semibold">
@@ -460,14 +454,12 @@ export default function ParticipantDetailPage() {
                       <tr className="border-b border-slate-200 bg-slate-50/70 text-slate-500 uppercase tracking-wider text-[10px] font-semibold">
                         <th className="py-3 px-4 rounded-l-xl">दिन व तारीख</th>
                         <th className="py-3 px-3">प्रवेश (Entry)</th>
-                        <th className="py-3 px-3">उपहार / प्रॉप (Gift)</th>
                         <th className="py-3 px-3">भोजन पैकेट (Bhojan)</th>
                         <th className="py-3 px-4 rounded-r-xl">प्रस्थान (Exit) व अवधि</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 font-medium">
                       {dayGrid.map((d) => {
-                        const isGiftClaimed = d.gift?.claimed ?? d.claimed
                         const isFoodClaimed = d.food?.claimed ?? false
 
                         return (
@@ -512,33 +504,6 @@ export default function ParticipantDetailPage() {
                                     <span>विंडो: {d.entryWindow ? `${d.entryWindow.start} - ${d.entryWindow.end}` : '19:00 - 21:30'}</span>
                                   </span>
                                 </div>
-                              )}
-                            </td>
-
-                            {/* Gift / Prop Status */}
-                            <td className="py-3.5 px-3 whitespace-nowrap">
-                              {isGiftClaimed ? (
-                                <div className="inline-flex flex-col gap-0.5">
-                                  <span className="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md text-[11px] font-semibold">
-                                    <Gift className="w-3 h-3 text-emerald-600" />
-                                    वितरित
-                                  </span>
-                                  {(d.gift?.claimedAt || d.claimInfo?.claimedAt) && (
-                                    <span className="text-[10px] text-slate-400 pl-1 font-mono">
-                                      {new Date(d.gift?.claimedAt || d.claimInfo!.claimedAt).toLocaleTimeString('en-IN', {
-                                        timeZone: 'Asia/Kolkata',
-                                        hour: '2-digit',
-                                        minute: '2-digit',
-                                      })}
-                                      {d.gift?.staffName ? ` (${d.gift.staffName})` : ''}
-                                    </span>
-                                  )}
-                                </div>
-                              ) : (
-                                <span className="inline-flex items-center gap-1 text-slate-400 bg-slate-100/60 px-2 py-0.5 rounded-md text-[11px]">
-                                  <Gift className="w-3 h-3 text-slate-300" />
-                                  बाकी
-                                </span>
                               )}
                             </td>
 

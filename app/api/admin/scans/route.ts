@@ -53,11 +53,9 @@ export async function GET(req: NextRequest) {
   const claims = await Claim.find({ distributionDate: selectedDate })
     .populate('participantId', 'name fatherName participantId status')
     .populate('claimedByStaffId', 'name')
-    .populate('giftStaffId', 'name')
     .populate('foodStaffId', 'name')
     .sort({ claimedAt: -1 })
 
-  let giftDistributed = 0
   let foodDistributed = 0
   let currentlyInside = 0
   let exitedCount = 0
@@ -71,19 +69,16 @@ export async function GET(req: NextRequest) {
       status: string
     } | null
 
-    const isGift = !!c.giftClaimed
     const isFood = !!c.foodClaimed
     const hasEntered = !!c.entryTime
     const hasExited = !!c.exitTime
     const isInside = hasEntered && !hasExited
 
-    if (isGift) giftDistributed++
     if (isFood) foodDistributed++
     if (isInside) currentlyInside++
     if (hasExited) exitedCount++
 
     const fallbackStaff = (c.claimedByStaffId as unknown as { name?: string })?.name || 'Staff'
-    const giftStaff = (c.giftStaffId as unknown as { name?: string })?.name || fallbackStaff
     const foodStaff = (c.foodStaffId as unknown as { name?: string })?.name || fallbackStaff
 
     // Calculate time duration
@@ -128,9 +123,6 @@ export async function GET(req: NextRequest) {
       entryTime: c.entryTime,
       exitTime: c.exitTime,
       timeSpent,
-      giftClaimed: isGift,
-      giftClaimedAt: c.giftClaimedAt || (isGift ? c.claimedAt : undefined),
-      giftStaffName: isGift ? giftStaff : undefined,
       foodClaimed: isFood,
       foodClaimedAt: c.foodClaimedAt,
       foodStaffName: isFood ? foodStaff : undefined,
@@ -140,8 +132,8 @@ export async function GET(req: NextRequest) {
 
   const turnout = claims.length
   const pendingTurnout = Math.max(0, totalParticipants - turnout)
-  const pendingGift = Math.max(0, totalParticipants - giftDistributed)
   const pendingFood = Math.max(0, totalParticipants - foodDistributed)
+  const pendingFoodForEntered = claims.filter(c => c.entryTime && !c.foodClaimed).length
 
   return NextResponse.json({
     selectedDate,
@@ -160,11 +152,10 @@ export async function GET(req: NextRequest) {
       turnout,
       currentlyInside,
       exitedCount,
-      giftDistributed,
       foodDistributed,
       pendingTurnout,
-      pendingGift,
       pendingFood,
+      pendingFoodForEntered,
     },
     scans,
   })
