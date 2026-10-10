@@ -293,19 +293,19 @@ export default function ScannerPage() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col justify-between selection:bg-orange-600 selection:text-white">
+    <div className="min-h-screen bg-slate-100 text-slate-900 flex flex-col justify-between selection:bg-orange-600 selection:text-white">
       {/* Top Header */}
-      <header className="bg-neutral-900 border-b border-neutral-800 px-4 py-3 flex items-center justify-between sticky top-0 z-20">
+      <header className="bg-white border-b border-slate-200/90 px-4 py-3 flex items-center justify-between sticky top-0 z-20 shadow-xs">
         <Link
           href="/staff/dashboard"
-          className="inline-flex items-center gap-1.5 text-xs font-medium text-neutral-400 hover:text-white transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-200 px-3 py-1.5 rounded-xl transition-colors shadow-2xs"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>डैशबोर्ड</span>
         </Link>
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-500" />
-          <span className="text-xs font-semibold text-neutral-200">
+        <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="text-xs font-bold text-emerald-800">
             QR स्कैनर (गेट व वितरण)
           </span>
         </div>
@@ -322,12 +322,12 @@ export default function ScannerPage() {
           }
         >
           {cameraError ? (
-            <div className="bg-neutral-900 border border-red-900/60 rounded-2xl p-6 text-center w-full max-w-sm">
-              <div className="w-12 h-12 rounded-xl bg-red-950/60 text-red-400 flex items-center justify-center mx-auto mb-3 border border-red-900/40">
+            <div className="bg-white border-2 border-red-200 rounded-3xl p-6 text-center w-full max-w-sm shadow-xl shadow-red-500/10">
+              <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mx-auto mb-3 border border-red-200 shadow-xs">
                 <CameraOff className="w-6 h-6" />
               </div>
-              <h3 className="font-semibold text-sm text-red-200">कैमरा अनुमति नहीं मिली</h3>
-              <p className="text-xs text-neutral-400 mt-1.5 leading-relaxed">
+              <h3 className="font-bold text-sm text-slate-900">कैमरा अनुमति नहीं मिली</h3>
+              <p className="text-xs text-slate-600 mt-1.5 leading-relaxed font-medium">
                 पास स्कैन करने के लिए कैमरे की अनुमति आवश्यक है। कृपया अपने ब्राउज़र सेटिंग्स में कैमरा चालू करें और पुनः प्रयास करें।
               </p>
               <button
@@ -335,7 +335,7 @@ export default function ScannerPage() {
                   setCameraError(null)
                   startCamera()
                 }}
-                className="mt-4 w-full bg-red-600 hover:bg-red-500 active:bg-red-700 text-white py-2.5 rounded-lg text-xs font-semibold transition-colors"
+                className="mt-4 w-full bg-red-600 hover:bg-red-500 active:bg-red-700 text-white py-3 rounded-xl text-xs font-bold shadow-md transition-colors"
               >
                 कैमरा पुनः चालू करें
               </button>
@@ -343,25 +343,25 @@ export default function ScannerPage() {
           ) : (
             <>
               <div className="text-center space-y-0.5">
-                <h2 className="text-base font-semibold text-neutral-100">
+                <h2 className="text-lg font-black text-slate-900 tracking-tight">
                   प्रतिभागी पास स्कैन करें
                 </h2>
-                <p className="text-xs text-neutral-400">
-                  QR कोड को कैमरे के सामने स्थिर रखें
+                <p className="text-xs text-slate-600 font-medium">
+                  QR कोड को कैमरे के सामने सीधा रखें
                 </p>
               </div>
 
               {/* Viewfinder with Corner Accents */}
-              <div className="w-full max-w-[280px] aspect-square rounded-2xl overflow-hidden border border-neutral-800 bg-black relative">
+              <div className="w-full max-w-[280px] aspect-square rounded-2xl overflow-hidden border-4 border-orange-500 bg-black relative shadow-xl shadow-orange-500/15">
                 {/* Corner reticle guides */}
                 <div className="pointer-events-none absolute inset-0 z-10 p-3 flex flex-col justify-between">
                   <div className="flex justify-between">
-                    <div className="w-5 h-5 border-t-2 border-l-2 border-orange-500 rounded-tl-sm" />
-                    <div className="w-5 h-5 border-t-2 border-r-2 border-orange-500 rounded-tr-sm" />
+                    <div className="w-5 h-5 border-t-2 border-l-2 border-orange-400 rounded-tl-sm" />
+                    <div className="w-5 h-5 border-t-2 border-r-2 border-orange-400 rounded-tr-sm" />
                   </div>
                   <div className="flex justify-between">
-                    <div className="w-5 h-5 border-b-2 border-l-2 border-orange-500 rounded-bl-sm" />
-                    <div className="w-5 h-5 border-b-2 border-r-2 border-orange-500 rounded-br-sm" />
+                    <div className="w-5 h-5 border-b-2 border-l-2 border-orange-400 rounded-bl-sm" />
+                    <div className="w-5 h-5 border-b-2 border-r-2 border-orange-400 rounded-br-sm" />
                   </div>
                 </div>
 
@@ -369,8 +369,8 @@ export default function ScannerPage() {
                 <div id="qr-reader" className="w-full h-full" />
               </div>
 
-              <div className="flex items-center gap-1.5 text-xs text-neutral-400 bg-neutral-900 border border-neutral-800 px-3 py-1 rounded-full">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              <div className="flex items-center gap-1.5 text-xs text-slate-700 font-semibold bg-white border border-slate-200 px-3.5 py-1.5 rounded-full shadow-xs">
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
                 <span>कैमरा सक्रिय • ऑटो-डिटेक्ट चालू है</span>
               </div>
             </>
@@ -379,12 +379,12 @@ export default function ScannerPage() {
 
         {/* ── 2. LOADING STATE ── */}
         {state === 'loading' && (
-          <div className="text-center py-12">
-            <div className="w-14 h-14 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-center text-orange-500 mx-auto mb-3">
-              <Loader2 className="w-6 h-6 animate-spin" />
+          <div className="text-center py-12 w-full max-w-sm bg-white border-2 border-orange-200 rounded-3xl p-8 shadow-xl shadow-orange-500/10">
+            <div className="w-14 h-14 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center text-orange-600 mx-auto mb-3 shadow-xs">
+              <Loader2 className="w-7 h-7 animate-spin" />
             </div>
-            <h3 className="text-base font-semibold text-white">पास जांचा जा रहा है...</h3>
-            <p className="text-xs text-neutral-400 mt-1">
+            <h3 className="text-base font-black text-slate-900">पास जांचा जा रहा है...</h3>
+            <p className="text-xs text-slate-600 mt-1 font-medium">
               प्रवेश व सामग्री की स्थिति सत्यापित की जा रही है
             </p>
           </div>
@@ -394,67 +394,67 @@ export default function ScannerPage() {
         {state === 'verify' && verifyData && (
           <div className="w-full flex flex-col items-center gap-4">
             {/* Participant Card */}
-            <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 w-full">
+            <div className="bg-white border-2 border-orange-200/90 rounded-3xl p-5 sm:p-6 w-full shadow-xl shadow-orange-500/10">
               {/* Header Badges */}
               <div className="flex items-center justify-between gap-2 mb-3">
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-neutral-800 border border-neutral-700 text-neutral-300 text-xs font-medium">
-                  <UserCheck className="w-3.5 h-3.5 text-blue-400" />
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-blue-50 border border-blue-200 text-blue-800 text-xs font-bold">
+                  <UserCheck className="w-3.5 h-3.5 text-blue-600" />
                   <span>सत्यापित पास</span>
                 </div>
 
                 {/* Presence Stage Badge */}
                 {!verifyData.hasEntered ? (
-                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-400 bg-amber-950/60 border border-amber-800/80 px-2.5 py-0.5 rounded-md">
-                    <LogIn className="w-3 h-3" />
+                  <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-900 bg-amber-100 border border-amber-300 px-3 py-1 rounded-lg">
+                    <LogIn className="w-3 h-3 text-amber-700" />
                     <span>प्रवेश बाकी (Gate In)</span>
                   </span>
                 ) : !verifyData.hasExited ? (
-                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-400 bg-emerald-950/60 border border-emerald-800/80 px-2.5 py-0.5 rounded-md">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                  <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-900 bg-emerald-100 border border-emerald-300 px-3 py-1 rounded-lg">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
                     <span>अंदर हैं (IN)</span>
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 text-xs font-medium text-neutral-400 bg-neutral-800 border border-neutral-700 px-2.5 py-0.5 rounded-md">
-                    <LogOut className="w-3 h-3 text-neutral-400" />
+                  <span className="inline-flex items-center gap-1 text-xs font-bold text-slate-800 bg-slate-200 border border-slate-300 px-3 py-1 rounded-lg">
+                    <LogOut className="w-3 h-3 text-slate-600" />
                     <span>बाहर गए (OUT)</span>
                   </span>
                 )}
               </div>
 
               {/* Participant Name */}
-              <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+              <h2 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight leading-snug">
                 {verifyData.participant.name}
               </h2>
 
               {/* Parentage & Info */}
-              <div className="mt-1.5 text-xs text-neutral-300 space-y-0.5">
+              <div className="mt-1.5 text-xs text-slate-700 font-medium space-y-0.5">
                 <p>
                   {verifyData.participant.motherName && (
-                    <span>माता: <strong className="text-neutral-100">{verifyData.participant.motherName}</strong> | </span>
+                    <span>माता: <strong className="text-slate-950 font-bold">{verifyData.participant.motherName}</strong> | </span>
                   )}
-                  पिता: <strong className="text-neutral-100">{verifyData.participant.fatherName}</strong>
+                  पिता: <strong className="text-slate-950 font-bold">{verifyData.participant.fatherName}</strong>
                 </p>
                 {verifyData.participant.phone && (
-                  <p className="text-neutral-400 font-mono">
-                    मोबाइल: <span className="text-neutral-300">{verifyData.participant.phone}</span>
+                  <p className="text-slate-600 font-mono">
+                    मोबाइल: <span className="text-slate-900 font-bold">{verifyData.participant.phone}</span>
                   </p>
                 )}
               </div>
 
               {/* ID & Categorical Badges */}
-              <div className="mt-3 pt-3 border-t border-neutral-800 flex flex-wrap items-center gap-2">
-                <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-neutral-800 text-neutral-200 border border-neutral-700">
+              <div className="mt-3 pt-3 border-t border-slate-100 flex flex-wrap items-center gap-2">
+                <span className="font-mono text-xs font-bold px-2.5 py-1 rounded-lg bg-slate-100 text-slate-800 border border-slate-200">
                   {verifyData.participant.participantId}
                 </span>
 
                 {verifyData.participant.countNumber && (
-                  <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-orange-950/60 text-orange-400 border border-orange-800/60">
+                  <span className="font-mono text-xs font-black px-2.5 py-1 rounded-lg bg-amber-100 text-amber-950 border border-amber-300">
                     क्रमांक #{verifyData.participant.countNumber}
                   </span>
                 )}
 
                 {verifyData.participant.category && (
-                  <span className="uppercase text-[10px] font-semibold px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-300 border border-neutral-700">
+                  <span className="uppercase text-[10px] font-black px-2 py-1 rounded-lg bg-blue-50 text-blue-900 border border-blue-200">
                     {verifyData.participant.category}
                   </span>
                 )}
@@ -462,12 +462,12 @@ export default function ScannerPage() {
 
               {/* Timestamps (Entry / Exit duration) */}
               {(verifyData.entryTime || verifyData.exitTime) && (
-                <div className="mt-2.5 text-[11px] text-neutral-400 bg-neutral-950 border border-neutral-800 rounded-lg p-2 font-mono space-y-0.5">
+                <div className="mt-3 text-[11px] text-slate-700 bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-mono space-y-0.5">
                   {verifyData.entryTime && (
                     <div>
                       प्रवेश: {formatClaimTime(verifyData.entryTime)}
                       {!verifyData.hasExited && (
-                        <span className="text-emerald-400 font-sans ml-1.5 font-medium">
+                        <span className="text-emerald-700 font-sans ml-1.5 font-bold">
                           ({formatDurationHindi(verifyData.entryTime)} से अंदर)
                         </span>
                       )}
@@ -476,7 +476,7 @@ export default function ScannerPage() {
                   {verifyData.exitTime && (
                     <div>
                       प्रस्थान: {formatClaimTime(verifyData.exitTime)}
-                      <span className="text-neutral-300 font-sans ml-1.5 font-medium">
+                      <span className="text-slate-600 font-sans ml-1.5 font-bold">
                         (कुल {formatDurationHindi(verifyData.entryTime!, verifyData.exitTime)})
                       </span>
                     </div>
@@ -486,26 +486,32 @@ export default function ScannerPage() {
 
               {/* Items Status List (Once entered) */}
               {verifyData.hasEntered && (
-                <div className="mt-4 pt-3 border-t border-neutral-800 space-y-2">
+                <div className="mt-4 pt-3 border-t border-slate-100 space-y-2">
                   {/* Gift Status Row */}
-                  <div className="p-2.5 rounded-xl bg-neutral-950 border border-neutral-800 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Gift className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <div
+                    className={`p-3 rounded-2xl border-2 flex items-center justify-between transition-colors ${
+                      verifyData.canClaimGift
+                        ? 'bg-amber-50/90 border-amber-300'
+                        : 'bg-emerald-50 border-emerald-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Gift className="w-5 h-5 text-emerald-600 shrink-0" />
                       <div>
-                        <span className="text-xs font-semibold text-neutral-200 block">
+                        <span className="text-xs font-black text-slate-900 block">
                           उपहार / प्रॉप (Gift)
                         </span>
-                        <span className="text-[10px] text-neutral-400">दिवस {verifyData.navratriDay}</span>
+                        <span className="text-[11px] text-slate-600 font-semibold">दिवस {verifyData.navratriDay}</span>
                       </div>
                     </div>
                     <div>
                       {verifyData.canClaimGift ? (
-                        <span className="text-xs font-semibold text-amber-400 bg-amber-950/60 border border-amber-800/80 px-2 py-0.5 rounded">
+                        <span className="text-xs font-black text-amber-900 bg-amber-200/90 border border-amber-300 px-2.5 py-1 rounded-lg shadow-2xs">
                           देना बाकी
                         </span>
                       ) : (
-                        <span className="text-xs font-semibold text-emerald-400 bg-emerald-950/60 border border-emerald-800/80 px-2 py-0.5 rounded inline-flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3" />
+                        <span className="text-xs font-black text-emerald-900 bg-emerald-200 border border-emerald-300 px-2.5 py-1 rounded-lg inline-flex items-center gap-1 shadow-2xs">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
                           <span>वितरित</span>
                         </span>
                       )}
@@ -513,24 +519,30 @@ export default function ScannerPage() {
                   </div>
 
                   {/* Bhojan Status Row */}
-                  <div className="p-2.5 rounded-xl bg-neutral-950 border border-neutral-800 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <UtensilsCrossed className="w-4 h-4 text-blue-400 shrink-0" />
+                  <div
+                    className={`p-3 rounded-2xl border-2 flex items-center justify-between transition-colors ${
+                      verifyData.canClaimFood
+                        ? 'bg-amber-50/90 border-amber-300'
+                        : 'bg-blue-50 border-blue-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <UtensilsCrossed className="w-5 h-5 text-blue-600 shrink-0" />
                       <div>
-                        <span className="text-xs font-semibold text-neutral-200 block">
+                        <span className="text-xs font-black text-slate-900 block">
                           भोजन पैकेट (Bhojan)
                         </span>
-                        <span className="text-[10px] text-neutral-400">दैनिक प्रसादम</span>
+                        <span className="text-[11px] text-slate-600 font-semibold">दैनिक प्रसादम</span>
                       </div>
                     </div>
                     <div>
                       {verifyData.canClaimFood ? (
-                        <span className="text-xs font-semibold text-amber-400 bg-amber-950/60 border border-amber-800/80 px-2 py-0.5 rounded">
+                        <span className="text-xs font-black text-amber-900 bg-amber-200/90 border border-amber-300 px-2.5 py-1 rounded-lg shadow-2xs">
                           देना बाकी
                         </span>
                       ) : (
-                        <span className="text-xs font-semibold text-blue-400 bg-blue-950/60 border border-blue-800/80 px-2 py-0.5 rounded inline-flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3" />
+                        <span className="text-xs font-black text-blue-900 bg-blue-200 border border-blue-300 px-2.5 py-1 rounded-lg inline-flex items-center gap-1 shadow-2xs">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-blue-700" />
                           <span>वितरित</span>
                         </span>
                       )}
@@ -545,11 +557,11 @@ export default function ScannerPage() {
               {/* STAGE 1: FIRST SCAN — ENTRY ONLY */}
               {verifyData.canMarkEntry && (
                 <div className="space-y-2">
-                  <div className="bg-amber-950/50 border border-amber-800/60 rounded-xl p-3 text-center">
-                    <p className="text-xs text-amber-300 font-semibold">
+                  <div className="bg-amber-100 border-2 border-amber-300 rounded-2xl p-3 text-center">
+                    <p className="text-xs text-amber-950 font-black">
                       प्रथम स्कैन — पहले प्रवेश (Gate Entry) दर्ज करें
                     </p>
-                    <p className="text-[11px] text-neutral-400 mt-0.5">
+                    <p className="text-[11px] text-amber-800 font-semibold mt-0.5">
                       सामग्री (उपहार व भोजन) प्रवेश दर्ज होने के बाद ही दी जा सकेगी।
                     </p>
                   </div>
@@ -557,16 +569,16 @@ export default function ScannerPage() {
                   <button
                     onClick={() => confirmClaim('entry')}
                     disabled={confirming}
-                    className="w-full bg-orange-600 hover:bg-orange-500 active:bg-orange-700 disabled:opacity-60 text-white text-sm font-bold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2"
+                    className="w-full bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 hover:from-orange-500 hover:to-amber-400 active:scale-[0.99] disabled:opacity-60 text-white text-base font-black py-4 rounded-2xl shadow-xl shadow-orange-600/30 transition-all flex items-center justify-center gap-2 border-2 border-orange-400/40"
                   >
                     {confirming ? (
                       <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <Loader2 className="w-5 h-5 animate-spin" />
                         <span>प्रवेश दर्ज हो रहा है...</span>
                       </>
                     ) : (
                       <>
-                        <LogIn className="w-4 h-4" />
+                        <LogIn className="w-5 h-5" />
                         <span>प्रवेश दर्ज करें (Mark Gate Entry)</span>
                       </>
                     )}
@@ -583,16 +595,16 @@ export default function ScannerPage() {
                       <button
                         onClick={() => confirmClaim('both')}
                         disabled={confirming}
-                        className="w-full bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:opacity-60 text-white text-sm font-bold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2"
+                        className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 active:scale-[0.99] disabled:opacity-60 text-white text-base font-black py-4 rounded-2xl shadow-xl shadow-emerald-600/30 transition-all flex items-center justify-center gap-2 border-2 border-emerald-400/40"
                       >
                         {confirming ? (
                           <>
-                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <Loader2 className="w-5 h-5 animate-spin" />
                             <span>दर्ज हो रहा है...</span>
                           </>
                         ) : (
                           <>
-                            <CheckCircle2 className="w-4 h-4" />
+                            <CheckCircle2 className="w-5 h-5" />
                             <span>दोनों दें (उपहार + भोजन पैकेट)</span>
                           </>
                         )}
@@ -602,18 +614,18 @@ export default function ScannerPage() {
                         <button
                           onClick={() => confirmClaim('gift')}
                           disabled={confirming}
-                          className="w-full bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-emerald-400 font-semibold py-2.5 rounded-lg text-xs flex items-center justify-center gap-1.5 transition-colors"
+                          className="w-full bg-white hover:bg-emerald-50 border-2 border-emerald-300 text-emerald-800 font-bold py-3 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors shadow-xs"
                         >
-                          <Gift className="w-3.5 h-3.5 text-emerald-400" />
+                          <Gift className="w-4 h-4 text-emerald-600" />
                           <span>केवल उपहार</span>
                         </button>
 
                         <button
                           onClick={() => confirmClaim('food')}
                           disabled={confirming}
-                          className="w-full bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-blue-400 font-semibold py-2.5 rounded-lg text-xs flex items-center justify-center gap-1.5 transition-colors"
+                          className="w-full bg-white hover:bg-blue-50 border-2 border-blue-300 text-blue-800 font-bold py-3 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors shadow-xs"
                         >
-                          <UtensilsCrossed className="w-3.5 h-3.5 text-blue-400" />
+                          <UtensilsCrossed className="w-4 h-4 text-blue-600" />
                           <span>केवल भोजन</span>
                         </button>
                       </div>
@@ -625,16 +637,16 @@ export default function ScannerPage() {
                     <button
                       onClick={() => confirmClaim('gift')}
                       disabled={confirming}
-                      className="w-full bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:opacity-60 text-white text-sm font-bold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2"
+                      className="w-full bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:opacity-60 text-white text-base font-black py-4 rounded-2xl shadow-xl shadow-emerald-600/30 transition-all flex items-center justify-center gap-2"
                     >
                       {confirming ? (
                         <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <Loader2 className="w-5 h-5 animate-spin" />
                           <span>दर्ज हो रहा है...</span>
                         </>
                       ) : (
                         <>
-                          <Gift className="w-4 h-4" />
+                          <Gift className="w-5 h-5" />
                           <span>उपहार / प्रॉप दें</span>
                         </>
                       )}
@@ -646,16 +658,16 @@ export default function ScannerPage() {
                     <button
                       onClick={() => confirmClaim('food')}
                       disabled={confirming}
-                      className="w-full bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-60 text-white text-sm font-bold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2"
+                      className="w-full bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-60 text-white text-base font-black py-4 rounded-2xl shadow-xl shadow-blue-600/30 transition-all flex items-center justify-center gap-2"
                     >
                       {confirming ? (
                         <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <Loader2 className="w-5 h-5 animate-spin" />
                           <span>दर्ज हो रहा है...</span>
                         </>
                       ) : (
                         <>
-                          <UtensilsCrossed className="w-4 h-4" />
+                          <UtensilsCrossed className="w-5 h-5" />
                           <span>भोजन पैकेट दें</span>
                         </>
                       )}
@@ -664,8 +676,8 @@ export default function ScannerPage() {
 
                   {/* Both already claimed */}
                   {!verifyData.canClaimGift && !verifyData.canClaimFood && (
-                    <div className="p-3 bg-neutral-900 border border-neutral-800 rounded-xl text-center text-xs text-emerald-400 font-semibold flex items-center justify-center gap-1.5">
-                      <CheckCircle2 className="w-4 h-4" />
+                    <div className="p-3.5 bg-emerald-50 border-2 border-emerald-300 rounded-2xl text-center text-xs text-emerald-900 font-black flex items-center justify-center gap-2 shadow-xs">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                       <span>आज के उपहार व भोजन दोनों दिए जा चुके हैं</span>
                     </div>
                   )}
@@ -675,12 +687,12 @@ export default function ScannerPage() {
                     <button
                       onClick={() => confirmClaim('exit')}
                       disabled={confirming}
-                      className="w-full bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-neutral-300 hover:text-red-300 font-medium py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors"
+                      className="w-full bg-slate-800 hover:bg-slate-700 active:bg-slate-900 border border-slate-700 text-white font-bold py-3 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors shadow-md"
                     >
                       {confirming ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
-                        <LogOut className="w-3.5 h-3.5 text-neutral-400" />
+                        <LogOut className="w-4 h-4 text-slate-300" />
                       )}
                       <span>प्रस्थान दर्ज करें (Mark Exit)</span>
                     </button>
@@ -690,7 +702,7 @@ export default function ScannerPage() {
 
               <button
                 onClick={reset}
-                className="w-full py-2.5 text-xs text-neutral-400 hover:text-white transition-colors font-medium"
+                className="w-full py-2.5 text-xs text-slate-600 hover:text-slate-900 transition-colors font-bold"
               >
                 रद्द करें व अगला पास स्कैन करें
               </button>
@@ -701,30 +713,30 @@ export default function ScannerPage() {
         {/* ── 4. SUCCESS STATE ── */}
         {state === 'success' && successData && (
           <div className="w-full flex flex-col items-center gap-4 text-center">
-            <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 w-full">
-              <div className="w-12 h-12 rounded-xl bg-emerald-950/60 border border-emerald-800/80 flex items-center justify-center text-emerald-400 mx-auto mb-3">
-                <CheckCircle2 className="w-6 h-6" />
+            <div className="bg-white border-2 border-emerald-300 rounded-3xl p-7 w-full shadow-xl shadow-emerald-600/10">
+              <div className="w-14 h-14 rounded-2xl bg-emerald-500 text-white flex items-center justify-center mx-auto mb-3 shadow-md shadow-emerald-500/25">
+                <CheckCircle2 className="w-7 h-7" />
               </div>
 
-              <span className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">
+              <span className="text-xs font-black text-emerald-700 uppercase tracking-wider">
                 वितरण सफल रहा
               </span>
-              <h2 className="text-xl font-bold text-white mt-1">
+              <h2 className="text-2xl font-black text-slate-900 mt-1">
                 {successData.name}
               </h2>
-              <p className="text-neutral-300 text-xs font-medium mt-1">
+              <p className="text-slate-700 text-xs font-bold mt-1">
                 दिवस {successData.navratriDay} • {successData.itemLabel}
               </p>
-              <p className="text-[11px] text-neutral-500 font-mono mt-2">
+              <p className="text-[11px] text-slate-500 font-mono mt-2">
                 {successData.claimedAt}
               </p>
             </div>
 
             <button
               onClick={reset}
-              className="w-full bg-orange-600 hover:bg-orange-500 active:bg-orange-700 text-white font-semibold py-3.5 rounded-xl text-sm transition-colors flex items-center justify-center gap-2"
+              className="w-full bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 hover:from-orange-500 hover:to-amber-400 active:scale-[0.99] text-white font-black py-4 rounded-2xl text-base shadow-xl shadow-orange-600/30 transition-all flex items-center justify-center gap-2 border-2 border-orange-400/40"
             >
-              <QrCode className="w-4 h-4" />
+              <QrCode className="w-5 h-5" />
               <span>अगला पास स्कैन करें</span>
             </button>
           </div>
@@ -733,24 +745,24 @@ export default function ScannerPage() {
         {/* ── 5. ERROR STATE ── */}
         {state === 'error' && errorData && (
           <div className="w-full flex flex-col items-center gap-4 text-center">
-            <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 w-full">
-              <div className="w-12 h-12 rounded-xl bg-red-950/60 border border-red-900/60 flex items-center justify-center text-red-400 mx-auto mb-3">
+            <div className="bg-white border-2 border-red-200 rounded-3xl p-7 w-full shadow-xl shadow-red-600/10">
+              <div className="w-14 h-14 rounded-2xl bg-red-100 border border-red-200 flex items-center justify-center text-red-600 mx-auto mb-3 shadow-xs">
                 {errorData.error === 'ALL_COMPLETED' ? (
-                  <CheckCircle2 className="w-6 h-6 text-emerald-400" />
+                  <CheckCircle2 className="w-7 h-7 text-emerald-600" />
                 ) : errorData.error === 'ENTRY_REQUIRED' ? (
-                  <LogIn className="w-6 h-6 text-amber-400" />
+                  <LogIn className="w-7 h-7 text-amber-600" />
                 ) : errorData.error === 'ALREADY_CLAIMED' ? (
-                  <AlertTriangle className="w-6 h-6 text-amber-400" />
+                  <AlertTriangle className="w-7 h-7 text-amber-600" />
                 ) : errorData.error === 'NOT_STARTED' ? (
-                  <Clock className="w-6 h-6 text-blue-400" />
+                  <Clock className="w-7 h-7 text-blue-600" />
                 ) : errorData.error === 'ENDED' ? (
-                  <Ban className="w-6 h-6 text-red-400" />
+                  <Ban className="w-7 h-7 text-red-600" />
                 ) : (
-                  <XCircle className="w-6 h-6 text-red-400" />
+                  <XCircle className="w-7 h-7 text-red-600" />
                 )}
               </div>
 
-              <h2 className="text-base font-bold text-white mb-1">
+              <h2 className="text-base font-black text-slate-900 mb-1">
                 {errorData.error === 'ALL_COMPLETED'
                   ? 'आज की सभी प्रक्रियाएं पूर्ण ✅'
                   : errorData.error === 'ENTRY_REQUIRED'
@@ -772,37 +784,37 @@ export default function ScannerPage() {
                   : 'सूचना'}
               </h2>
 
-              <p className="text-xs text-neutral-400 leading-relaxed max-w-xs mx-auto">
+              <p className="text-xs text-slate-600 leading-relaxed max-w-xs mx-auto font-medium">
                 {errorData.message}
               </p>
 
               {errorData.participant && (
-                <div className="mt-4 p-3 bg-neutral-950 rounded-xl border border-neutral-800 text-left">
-                  <p className="text-sm font-semibold text-white">
+                <div className="mt-4 p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-left">
+                  <p className="text-sm font-bold text-slate-900">
                     {errorData.participant.name}
                   </p>
-                  <p className="text-xs text-neutral-400 mt-0.5">
+                  <p className="text-xs text-slate-600 mt-0.5 font-medium">
                     पिता: {errorData.participant.fatherName}
                   </p>
                 </div>
               )}
 
               {errorData.claim && (
-                <div className="mt-3 p-3 bg-neutral-950 rounded-xl border border-neutral-800 text-left text-xs space-y-1">
+                <div className="mt-3 p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-left text-xs space-y-1.5 font-medium">
                   {errorData.claim.giftClaimed && (
-                    <div className="text-emerald-400 flex items-center gap-1.5">
-                      <Gift className="w-3.5 h-3.5 shrink-0" />
+                    <div className="text-emerald-800 flex items-center gap-1.5 font-bold">
+                      <Gift className="w-4 h-4 text-emerald-600 shrink-0" />
                       <span>उपहार दिया गया: {formatClaimTime(errorData.claim.giftClaimedAt || errorData.claim.claimedAt)} {errorData.claim.giftStaffName ? `(${errorData.claim.giftStaffName})` : ''}</span>
                     </div>
                   )}
                   {errorData.claim.foodClaimed && (
-                    <div className="text-blue-400 flex items-center gap-1.5">
-                      <UtensilsCrossed className="w-3.5 h-3.5 shrink-0" />
+                    <div className="text-blue-800 flex items-center gap-1.5 font-bold">
+                      <UtensilsCrossed className="w-4 h-4 text-blue-600 shrink-0" />
                       <span>भोजन पैकेट दिया गया: {formatClaimTime(errorData.claim.foodClaimedAt)} {errorData.claim.foodStaffName ? `(${errorData.claim.foodStaffName})` : ''}</span>
                     </div>
                   )}
                   {!errorData.claim.giftClaimed && !errorData.claim.foodClaimed && errorData.claim.claimedAt && (
-                    <div className="text-neutral-400">
+                    <div className="text-slate-600">
                       वितरण समय: {formatClaimTime(errorData.claim.claimedAt)}
                     </div>
                   )}
@@ -812,9 +824,9 @@ export default function ScannerPage() {
 
             <button
               onClick={reset}
-              className="w-full bg-neutral-800 hover:bg-neutral-700 active:bg-neutral-900 text-white font-medium py-3 rounded-xl text-xs border border-neutral-700 flex items-center justify-center gap-2 transition-colors"
+              className="w-full bg-slate-900 hover:bg-slate-800 active:bg-black text-white font-black py-3.5 rounded-2xl text-xs shadow-md flex items-center justify-center gap-2 transition-colors"
             >
-              <RefreshCw className="w-3.5 h-3.5" />
+              <RefreshCw className="w-4 h-4" />
               <span>पुनः स्कैन करें</span>
             </button>
           </div>
